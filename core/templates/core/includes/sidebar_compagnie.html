@@ -1,0 +1,25 @@
+{% comment %}
+Sidebar navigation for Compagnie space.
+Include in templates extending base.html via {% block sidebar_nav %}.
+{% endcomment %}
+<li class="{% if active_page == 'compagnie_dashboard' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a>
+</li>
+<li class="{% if active_page == 'compagnie_vehicules' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_vehicules' %}"><i class="fa-solid fa-bus"></i>Véhicules</a>
+</li>
+<li class="{% if active_page == 'compagnie_trajets' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a>
+</li>
+<li class="{% if active_page == 'compagnie_reservations' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a>
+</li>
+<!--<li class="{% if active_page == 'compagnie_regles' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_regles' %}"><i class="fa-solid fa-scale-balanced"></i>Règles d'annulation</a>
+</li>-->
+<li class="{% if active_page == 'compagnie_import' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_import' %}"><i class="fa-solid fa-file-import"></i>Import de données</a>
+</li>
+<li class="{% if active_page == 'compagnie_profil' %}active{% endif %}">
+  <a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building-circle-check"></i>Profil compagnie</a>
+</li>

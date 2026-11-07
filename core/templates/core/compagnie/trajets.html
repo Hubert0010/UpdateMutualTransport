@@ -1,0 +1,380 @@
+ {% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Gestion des Trajets — NAGODE Transport | MutualTransport{% endblock %}
+{% block user_name %}Nagode Admin{% endblock %}
+{% block user_display %}NAGODE Transport{% endblock %}
+{% block user_dropdown_name %}Kodjo NAGODE (Gérant){% endblock %}
+{% block user_email %}k.nagode@nagode-transport.tg{% endblock %}
+{% block logo_href %}{% url 'core:compagnie_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="compagnie_trajets" %}
+{% include "core/includes/sidebar_compagnie.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li><a href="{% url 'core:compagnie_vehicules' %}"><i class="fa-solid fa-bus"></i>Véhicules</a></li>
+<li class="active"><a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a></li>
+<li><a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:compagnie_regles' %}"><i class="fa-solid fa-scale-balanced"></i>Règles d'annulation</a></li>
+<li><a href="{% url 'core:compagnie_import' %}"><i class="fa-solid fa-file-import"></i>Import de données</a></li>
+<li><a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building-circle-check"></i>Profil compagnie</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Planification des Trajets &amp; Lignes</h1>
+    <p class="subtitle">Création, programmation des départs, fixation des tarifs et affectation des autocars (BF-31).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+    </button>
+    <button type="button" class="m-btn m-btn--primary" data-bs-toggle="modal" data-bs-target="#modalAddTrip">
+      <i class="fa-solid fa-plus"></i> Programmer un trajet
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Trajets Planifiés (Semaine)</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-calendar-days"></i></span>
+      </div>
+      <p class="stat-card__value">48</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-circle-check"></i> 8 départs par jour</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Places Ouvertes à la Vente</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-ticket"></i></span>
+      </div>
+      <p class="stat-card__value">2 640</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> Taux dispo 16%</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Trajets Complets</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-circle-check"></i></span>
+      </div>
+      <p class="stat-card__value">14</p>
+      <p class="stat-card__delta text-success"><i class="fa-solid fa-fire"></i> Forte demande RN1</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Prix Moyen du Billet</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-tags"></i></span>
+      </div>
+      <p class="stat-card__value">9 250 <small style="font-size: 13px; font-weight: 500;">FCFA</small></p>
+      <p class="stat-card__delta text-muted"><i class="fa-solid fa-shield-halved"></i> Tarifs réglementés</p>
+    </div>
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="m-card">
+  <div class="filter-bar">
+    <div class="tab-nav" role="tablist">
+      <button class="active" onclick="filterTrips('all', this)">Tous les trajets (48)</button>
+      <button onclick="filterTrips('ouvert', this)">Ouverts (32)</button>
+      <button onclick="filterTrips('complet', this)">Complets (14)</button>
+      <button onclick="filterTrips('termine', this)">Terminés (2)</button>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="tripSearchInput" placeholder="Ville, date, véhicule..." onkeyup="searchTrips()">
+      </div>
+      <select class="form-select form-select-sm" style="width: auto; height: 36px; border-color: var(--m-border);" onchange="filterDestination(this.value)">
+        <option value="">Toutes destinations</option>
+        <option value="Kara">Vers Kara</option>
+        <option value="Sokodé">Vers Sokodé</option>
+        <option value="Dapaong">Vers Dapaong</option>
+        <option value="Lomé">Vers Lomé</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle" id="tripsTable">
+      <thead>
+        <tr>
+          <th>Ligne &amp; Arrêts</th>
+          <th>Départ &amp; Arrivée</th>
+          <th>Véhicule</th>
+          <th>Tarif Unitaire</th>
+          <th>Remplissage</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Trajet 1 -->
+        <tr class="trip-row status-ouvert" data-dest="Kara">
+          <td>
+            <strong>Lomé (Agbalépédogan) ➔ Kara</strong>
+            <div class="text-muted small">Arrêts : Atakpamé, Sokodé, Bafilo</div>
+          </td>
+          <td>
+            <div class="fw-semibold">24/10/2026 à 06:30</div>
+            <div class="text-muted small">Arrivée est. 13:00 (6h30)</div>
+          </td>
+          <td>
+            <span class="badge bg-dark font-monospace">TG-8412-BP</span>
+            <div class="text-muted small">Autocar VIP (60 places)</div>
+          </td>
+          <td><strong class="text-primary font-monospace">10 000 FCFA</strong></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 6px; width: 80px;">
+                <div class="progress-bar bg-success" style="width: 88%;"></div>
+              </div>
+              <span class="small fw-bold">53/60</span>
+            </div>
+          </td>
+          <td><span class="badge-status badge-status--success">Ouvert à la vente</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary" title="Passagers inscrits"><i class="fa-solid fa-users"></i></a>
+              <button class="btn-icon" title="Modifier le trajet"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Annuler le départ" onclick="cancelTrip('Lomé ➔ Kara 06:30')"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Trajet 2 -->
+        <tr class="trip-row status-complet" data-dest="Dapaong">
+          <td>
+            <strong>Lomé ➔ Dapaong (Grand Nord Direct)</strong>
+            <div class="text-muted small">Arrêts : Mango, Tandjouaré</div>
+          </td>
+          <td>
+            <div class="fw-semibold">24/10/2026 à 05:30</div>
+            <div class="text-muted small">Arrivée est. 15:30 (10h00)</div>
+          </td>
+          <td>
+            <span class="badge bg-dark font-monospace">TG-9042-BW</span>
+            <div class="text-muted small">Grand Autocar (65 places)</div>
+          </td>
+          <td><strong class="text-primary font-monospace">14 000 FCFA</strong></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 6px; width: 80px;">
+                <div class="progress-bar bg-danger" style="width: 100%;"></div>
+              </div>
+              <span class="small fw-bold text-danger">65/65 (Complet)</span>
+            </div>
+          </td>
+          <td><span class="badge-status badge-status--danger">Complet (Guichet fermé)</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary" title="Passagers inscrits"><i class="fa-solid fa-users"></i></a>
+              <button class="btn-icon" title="Consulter"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Trajet 3 -->
+        <tr class="trip-row status-ouvert" data-dest="Sokodé">
+          <td>
+            <strong>Lomé ➔ Sokodé</strong>
+            <div class="text-muted small">Arrêt : Notsè, Atakpamé</div>
+          </td>
+          <td>
+            <div class="fw-semibold">24/10/2026 à 08:00</div>
+            <div class="text-muted small">Arrivée est. 13:30 (5h30)</div>
+          </td>
+          <td>
+            <span class="badge bg-dark font-monospace">TG-1190-BN</span>
+            <div class="text-muted small">Bus Confort (50 places)</div>
+          </td>
+          <td><strong class="text-primary font-monospace">8 000 FCFA</strong></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 6px; width: 80px;">
+                <div class="progress-bar bg-primary" style="width: 60%;"></div>
+              </div>
+              <span class="small fw-bold">30/50</span>
+            </div>
+          </td>
+          <td><span class="badge-status badge-status--info">Places disponibles</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary"><i class="fa-solid fa-users"></i></a>
+              <button class="btn-icon"><i class="fa-solid fa-pen-to-square"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Trajet 4: Sens retour -->
+        <tr class="trip-row status-ouvert" data-dest="Lomé">
+          <td>
+            <strong>Kara (Gare Centrale) ➔ Lomé</strong>
+            <div class="text-muted small">Arrêts : Sokodé, Atakpamé, Tsévié</div>
+          </td>
+          <td>
+            <div class="fw-semibold">25/10/2026 à 07:00</div>
+            <div class="text-muted small">Arrivée est. 13:30 (6h30)</div>
+          </td>
+          <td>
+            <span class="badge bg-dark font-monospace">TG-8412-BP</span>
+            <div class="text-muted small">Autocar VIP (60 places)</div>
+          </td>
+          <td><strong class="text-primary font-monospace">10 000 FCFA</strong></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 6px; width: 80px;">
+                <div class="progress-bar bg-primary" style="width: 45%;"></div>
+              </div>
+              <span class="small fw-bold">27/60</span>
+            </div>
+          </td>
+          <td><span class="badge-status badge-status--info">Places disponibles</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary"><i class="fa-solid fa-users"></i></a>
+              <button class="btn-icon"><i class="fa-solid fa-pen-to-square"></i></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Création Trajet (BF-31) -->
+<div class="modal fade" id="modalAddTrip" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Programmer un nouveau départ interurbain</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); alert('Trajet programmé avec succès et disponible immédiatement pour les réservations !');">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Ville de Départ &amp; Gare</label>
+              <select class="form-select" required>
+                <option>Lomé — Gare Agbalépédogan</option>
+                <option>Lomé — Gare Grand Marché</option>
+                <option>Kara — Gare Centrale</option>
+                <option>Sokodé — Gare Principale</option>
+                <option>Dapaong — Gare Centrale</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Ville d'Arrivée (Terminus)</label>
+              <select class="form-select" required>
+                <option>Kara — Gare Centrale</option>
+                <option>Dapaong — Gare Centrale</option>
+                <option>Sokodé — Gare Principale</option>
+                <option>Lomé — Gare Agbalépédogan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Date de Départ</label>
+              <input type="date" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Heure de Départ</label>
+              <input type="time" class="form-control" value="06:30" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Durée estimée (heures)</label>
+              <input type="text" class="form-control" value="06h 30min" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Véhicule assigné (Flotte)</label>
+              <select class="form-select" required>
+                <option>TG-8412-BP (Mercedes Tourismo VIP - 60 places)</option>
+                <option>TG-1190-BN (Scania Touring - 50 places)</option>
+                <option>TG-9042-BW (Grand Autocar - 65 places)</option>
+                <option>TG-5520-BL (Toyota Coaster - 30 places)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Tarif du Billet (FCFA)</label>
+              <div class="input-group">
+                <input type="number" class="form-control" value="10000" step="500" required>
+                <span class="input-group-text">FCFA</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Arrêts intermédiaires / Escales</label>
+            <input type="text" class="form-control" placeholder="ex: Atakpamé (15 min), Sokodé (20 min)">
+          </div>
+
+          <div class="alert alert-light border small mb-4">
+            <i class="fa-solid fa-circle-info text-primary me-1"></i> Dès validation, le trajet sera visible pour tous les utilisateurs sur le portail web et l'application mobile de mutualisation.
+          </div>
+
+          <button type="submit" class="m-btn m-btn--primary w-100">Publier et ouvrir les réservations</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterTrips(status, btn) {
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('.trip-row');
+  rows.forEach(r => {
+    if (status === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains('status-' + status) ? '' : 'none';
+    }
+  });
+}
+
+function searchTrips() {
+  const query = document.getElementById('tripSearchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.trip-row');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function filterDestination(dest) {
+  const rows = document.querySelectorAll('.trip-row');
+  rows.forEach(r => {
+    if (!dest || r.getAttribute('data-dest') === dest) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+
+function cancelTrip(name) {
+  if (confirm("Attention : l'annulation du trajet " + name + " déclenchera le remboursement automatique par T-Money/Flooz des passagers enregistrés selon les règles BF-32. Confirmez-vous l'annulation ?")) {
+    alert("Trajet annulé. Notifications et remboursements envoyés.");
+  }
+}
+</script>
+{% endblock %}

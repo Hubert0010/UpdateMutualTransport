@@ -1,0 +1,288 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Supervision des Réservations &amp; Paiements — Administrateur | MutualTransport{% endblock %}
+{% block user_name %}Admin{% endblock %}
+{% block user_display %}Administrateur{% endblock %}
+{% block user_dropdown_name %}Administrateur{% endblock %}
+{% block user_email %}admin@mutualtransport.tg{% endblock %}
+{% block logo_href %}{% url 'core:admin_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="admin_reservations" %}
+{% include "core/includes/sidebar_admin.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:admin_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li><a href="{% url 'core:admin_compagnies' %}"><i class="fa-solid fa-building"></i>Compagnies</a></li>
+<li><a href="{% url 'core:admin_utilisateurs' %}"><i class="fa-solid fa-users"></i>Utilisateurs</a></li>
+<li class="active"><a href="{% url 'core:admin_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:admin_collecte' %}"><i class="fa-solid fa-map-location-dot"></i>Réseau &amp; Collecte</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Supervision des Réservations &amp; Flux Financiers</h1>
+    <p class="subtitle">Suivi des transactions multi-compagnies, paiements mobiles (T-Money / Flooz) et commissions réseau (BF-39).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+    </button>
+    <button type="button" class="m-btn m-btn--primary" onclick="alert('Exportation du grand livre comptable (CSV/Excel) en cours...');">
+      <i class="fa-solid fa-file-excel"></i> Exporter le grand livre
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Volume Transactions (Mois)</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-wallet"></i></span>
+      </div>
+      <p class="stat-card__value">32 450 000 <small style="font-size: 14px; font-weight: 500;">FCFA</small></p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> +14.2% vs M-1</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Commissions MutualTransport</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-chart-line"></i></span>
+      </div>
+      <p class="stat-card__value">2 271 500 <small style="font-size: 14px; font-weight: 500;">FCFA</small></p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-circle-check"></i> Taux moyen 7%</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Billets Émis (30j)</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-ticket"></i></span>
+      </div>
+      <p class="stat-card__value">3 847</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> 128 aujourd'hui</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Remboursements traités</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-rotate-left"></i></span>
+      </div>
+      <p class="stat-card__value">315 000 <small style="font-size: 14px; font-weight: 500;">FCFA</small></p>
+      <p class="stat-card__delta text-muted"><i class="fa-solid fa-clock"></i> 24 demandes d'annulation</p>
+    </div>
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="m-card">
+  <div class="filter-bar">
+    <div class="tab-nav" role="tablist">
+      <button class="active" onclick="filterRes('all', this)">Toutes (3 847)</button>
+      <button onclick="filterRes('confirmee', this)">Payées &amp; Confirmées (3 712)</button>
+      <button onclick="filterRes('attente', this)">En attente paiement (72)</button>
+      <button onclick="filterRes('annulee', this)">Annulées / Remboursées (63)</button>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="resSearchInput" placeholder="N° Billet, passager, téléphone..." onkeyup="searchRes()">
+      </div>
+      <select class="form-select form-select-sm" style="width: auto; height: 36px; border-color: var(--m-border);" onchange="filterComp(this.value)">
+        <option value="">Toutes les compagnies</option>
+        <option value="NAGODE">NAGODE Transport</option>
+        <option value="LK">LK La Postale</option>
+        <option value="KLOTO">Kloto Voyages</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle" id="reservationsTable">
+      <thead>
+        <tr>
+          <th>Réf. Billet</th>
+          <th>Passager</th>
+          <th>Trajet &amp; Date</th>
+          <th>Compagnie</th>
+          <th>Mode &amp; Montant</th>
+          <th>Commission MT</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="res-row status-confirmee" data-comp="NAGODE">
+          <td>
+            <strong>#RES-2026-9041</strong>
+            <div class="text-muted small">23/10/2026 14:22</div>
+          </td>
+          <td>
+            <strong>Kossi Mawuli DOSSEH</strong>
+            <div class="text-muted small">+228 90 41 88 22</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Kara</strong>
+            <div class="text-muted small">Départ : 24/10 à 06:30 (Siège 14)</div>
+          </td>
+          <td><span class="badge bg-light text-dark border">NAGODE</span></td>
+          <td>
+            <strong>10 000 FCFA</strong>
+            <div class="text-success small"><i class="fa-solid fa-mobile-screen"></i> T-Money</div>
+          </td>
+          <td class="text-primary font-monospace fw-semibold">+700 FCFA (7%)</td>
+          <td><span class="badge-status badge-status--success">Confirmée</span></td>
+          <td style="text-align: right;">
+            <button class="btn-icon" title="Voir reçu / QR Code" data-bs-toggle="modal" data-bs-target="#modalTicketPreview">
+              <i class="fa-solid fa-qrcode"></i>
+            </button>
+          </td>
+        </tr>
+
+        <tr class="res-row status-confirmee" data-comp="LK">
+          <td>
+            <strong>#RES-2026-9040</strong>
+            <div class="text-muted small">23/10/2026 13:50</div>
+          </td>
+          <td>
+            <strong>Afiwa EDOH</strong>
+            <div class="text-muted small">+228 99 12 33 00</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Sokodé</strong>
+            <div class="text-muted small">Départ : 24/10 à 07:00 (Siège 08)</div>
+          </td>
+          <td><span class="badge bg-light text-dark border">LK La Postale</span></td>
+          <td>
+            <strong>8 000 FCFA</strong>
+            <div class="text-info small"><i class="fa-solid fa-mobile-screen"></i> Moov Flooz</div>
+          </td>
+          <td class="text-primary font-monospace fw-semibold">+560 FCFA (7%)</td>
+          <td><span class="badge-status badge-status--success">Confirmée</span></td>
+          <td style="text-align: right;">
+            <button class="btn-icon" title="Voir reçu / QR Code"><i class="fa-solid fa-qrcode"></i></button>
+          </td>
+        </tr>
+
+        <tr class="res-row status-attente" data-comp="KLOTO">
+          <td>
+            <strong>#RES-2026-9039</strong>
+            <div class="text-muted small">23/10/2026 13:10</div>
+          </td>
+          <td>
+            <strong>Yao SOSSOU</strong>
+            <div class="text-muted small">+228 92 11 44 77</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Kpalimé</strong>
+            <div class="text-muted small">Départ : 24/10 à 09:00 (Siège 03)</div>
+          </td>
+          <td><span class="badge bg-light text-dark border">Kloto Voyages</span></td>
+          <td>
+            <strong>3 500 FCFA</strong>
+            <div class="text-muted small">Push USSD en cours</div>
+          </td>
+          <td class="text-muted font-monospace">245 FCFA</td>
+          <td><span class="badge-status badge-status--warning">En attente USSD</span></td>
+          <td style="text-align: right;">
+            <button class="btn-icon btn-icon--primary" title="Relancer la requête de paiement"><i class="fa-solid fa-rotate"></i></button>
+          </td>
+        </tr>
+
+        <tr class="res-row status-annulee" data-comp="NAGODE">
+          <td>
+            <strong>#RES-2026-9028</strong>
+            <div class="text-muted small">22/10/2026 18:05</div>
+          </td>
+          <td>
+            <strong>Komi AMENYAGLO</strong>
+            <div class="text-muted small">+228 90 77 66 55</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Dapaong</strong>
+            <div class="text-muted small">Annulé 48h avant départ</div>
+          </td>
+          <td><span class="badge bg-light text-dark border">NAGODE</span></td>
+          <td>
+            <strong>13 500 FCFA</strong>
+            <div class="text-danger small">Remboursé T-Money</div>
+          </td>
+          <td class="text-muted font-monospace">Frais d'annul. 1 000 F</td>
+          <td><span class="badge-status badge-status--danger">Remboursée (BF-32)</span></td>
+          <td style="text-align: right;">
+            <button class="btn-icon" title="Historique remboursement"><i class="fa-solid fa-receipt"></i></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Billet & QR Code -->
+<div class="modal fade" id="modalTicketPreview" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">E-Billet #RES-2026-9041</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="p-3 bg-light rounded border d-inline-block mb-3">
+          <i class="fa-solid fa-qrcode" style="font-size: 130px; color: var(--m-sidebar);"></i>
+        </div>
+        <h5>Kossi Mawuli DOSSEH</h5>
+        <p class="text-muted mb-2">Lomé (Gare Agbalépédogan) ➔ Kara (Gare Centrale)</p>
+        <p><strong>Compagnie :</strong> NAGODE Transport | <strong>Bus :</strong> TG-8412-BP (VIP)</p>
+        <p><strong>Siège :</strong> 14 | <strong>Statut :</strong> <span class="badge bg-success">Payé par T-Money</span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn--ghost" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="m-btn m-btn--primary" onclick="window.print();"><i class="fa-solid fa-print"></i> Imprimer le reçu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterRes(status, btn) {
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('.res-row');
+  rows.forEach(r => {
+    if (status === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains('status-' + status) ? '' : 'none';
+    }
+  });
+}
+
+function searchRes() {
+  const query = document.getElementById('resSearchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.res-row');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function filterComp(comp) {
+  const rows = document.querySelectorAll('.res-row');
+  rows.forEach(r => {
+    if (!comp || r.getAttribute('data-comp') === comp) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

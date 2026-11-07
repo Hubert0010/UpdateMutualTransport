@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <meta name="description" content="Inscription compagnie — MutualTransport"/>
+    <title>Inscription Compagnie | MutualTransport</title>
+    <meta name="theme-color" content="#4272d7"/>
+    <link href="{% static 'css/font-face.css' %}" rel="stylesheet" media="all"/>
+    <link rel="preconnect" href="https://rsms.me/"/>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+    <link href="{% static 'vendor/fontawesome-7.3.1/css/all.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'vendor/bootstrap-5.3.8.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'vendor/css-hamburgers/hamburgers.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'css/theme.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'css/app.css' %}" rel="stylesheet" media="all"/>
+  </head>
+  <body class="app auth-page">
+    <a class="visually-hidden-focusable skip-link" href="#auth-form">Aller au formulaire d'inscription</a>
+    <main class="login-wrap" id="auth-form">
+      <div class="login-content" style="max-width: 520px;">
+        <a href="{% url 'core:login' %}" class="auth-brand" aria-label="MutualTransport accueil">
+          <span class="logo-mark" aria-hidden="true">M</span>
+          <span class="logo-text">MutualTransport</span>
+        </a>
+        <h1 class="auth-title">Inscription Compagnie</h1>
+        <p class="auth-subtitle">Inscrivez votre compagnie de transport. Votre compte sera validé par un administrateur.</p>
+
+        <form class="login-form" action="" method="post" onsubmit="return false">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="nom_compagnie">Nom commercial <span style="color:#e74c3c;">*</span></label>
+                <input id="nom_compagnie" class="au-input" type="text" name="nom_compagnie"
+                       placeholder="Ex: NAGODE Transport" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="numero_agrement">Numéro d'agrément <span style="color:#e74c3c;">*</span></label>
+                <input id="numero_agrement" class="au-input" type="text" name="numero_agrement"
+                       placeholder="N° agrément" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="telephone">Téléphone professionnel <span style="color:#e74c3c;">*</span></label>
+                <input id="telephone" class="au-input" type="tel" name="telephone"
+                       placeholder="+228 90 00 00 00" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">E-mail professionnel <span style="color:#e74c3c;">*</span></label>
+            <input id="email" class="au-input" type="email" name="email"
+                   placeholder="contact@compagnie.com" required>
+          </div>
+          <div class="form-group">
+            <label for="adresse">Adresse du siège <span style="color:#e74c3c;">*</span></label>
+            <input id="adresse" class="au-input" type="text" name="adresse"
+                   placeholder="Ex: Quartier Adidogomé, Lomé" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="password">Mot de passe <span style="color:#e74c3c;">*</span></label>
+                <input id="password" class="au-input" type="password" name="password"
+                       placeholder="Min. 8 caractères" autocomplete="new-password" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="password_confirm">Confirmer le mot de passe <span style="color:#e74c3c;">*</span></label>
+                <input id="password_confirm" class="au-input" type="password" name="password_confirm"
+                       placeholder="Confirmer" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="login-checkbox" style="margin-bottom: 16px;">
+            <label>
+              <input type="checkbox" name="terms" required>
+              J'accepte les <a href="#">conditions d'utilisation</a>
+            </label>
+          </div>
+          <button class="au-btn au-btn--green" type="submit" onclick="handleRegister()">Créer le compte</button>
+        </form>
+
+        <div class="register-link">
+          <p>Déjà inscrit ? <a href="{% url 'core:login' %}">Se connecter</a></p>
+        </div>
+      </div>
+    </main>
+    <script src="{% static 'js/vanilla-utils.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap-5.3.8.bundle.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap5-init.js' %}"></script>
+    <script src="{% static 'js/main-vanilla.js' %}"></script>
+    <script src="{% static 'js/modern-plugins.js' %}"></script>
+    <script>
+      function handleRegister() {
+        alert("Votre demande d'inscription a bien été transmise avec succès !\nVotre dossier sera examiné par l'administrateur selon la procédure BF-37.");
+        window.location.href = "{% url 'core:login' %}";
+      }
+    </script>
+  </body>
+</html>

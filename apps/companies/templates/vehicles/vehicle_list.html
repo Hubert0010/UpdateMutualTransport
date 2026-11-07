@@ -1,0 +1,58 @@
+{% extends "core/base.html" %}
+{% block title %}Gestion des véhicules — MutualTransport{% endblock %}
+{% block user_name %}{{ request.user.get_full_name|default:request.user.username }}{% endblock %}
+{% block user_display %}{{ request.user.get_full_name|default:request.user.username }}{% endblock %}
+{% block user_dropdown_name %}{{ request.user.get_full_name|default:request.user.username }}{% endblock %}
+{% block user_email %}{{ request.user.email }}{% endblock %}
+{% block logo_href %}{% url 'core:compagnie_dashboard' %}{% endblock %}
+{% block sidebar_nav %}{% with active_page="compagnie_vehicules" %}{% include "core/includes/sidebar_compagnie.html" %}{% endwith %}{% endblock %}
+{% block mobile_nav %}
+<li><a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li class="active"><a href="{% url 'vehicles:list' %}"><i class="fa-solid fa-bus"></i>Véhicules</a></li>
+<li><a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a></li>
+<li><a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building"></i>Profil compagnie</a></li>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Gestion de la flotte</h1><p class="subtitle">Ajoutez, modifiez et suivez les véhicules de votre compagnie (BF-30).</p></div>
+  <div class="page-header__actions"><a class="m-btn m-btn--primary" href="{% url 'vehicles:create' %}"><i class="fa-solid fa-plus"></i> Ajouter un véhicule</a></div>
+</div>
+{% if messages %}{% for message in messages %}<div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}{% endif %}
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3"><div class="stat-card"><span class="stat-card__label">Total véhicules</span><p class="stat-card__value">{{ total_count }}</p></div></div>
+  <div class="col-sm-6 col-lg-3"><div class="stat-card"><span class="stat-card__label">En service</span><p class="stat-card__value">{{ active_count }}</p></div></div>
+  <div class="col-sm-6 col-lg-3"><div class="stat-card"><span class="stat-card__label">En maintenance</span><p class="stat-card__value">{{ maintenance_count }}</p></div></div>
+  <div class="col-sm-6 col-lg-3"><div class="stat-card"><span class="stat-card__label">Capacité totale</span><p class="stat-card__value">{{ total_seats }} <small>places</small></p></div></div>
+</div>
+<div class="m-card">
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-md-5"><label class="form-label">Recherche</label><input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Immatriculation ou marque…"></div>
+    <div class="col-md-3"><label class="form-label">Statut</label><select class="form-select" name="status"><option value="">Tous</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label">Catégorie</label><select class="form-select" name="category"><option value="">Toutes</option>{% for value,label in category_choices %}<option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-md-1"><button class="m-btn m-btn--primary w-100" type="submit"><i class="fa-solid fa-search"></i></button></div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead><tr><th>Immatriculation</th><th>Véhicule</th><th>Capacité</th><th>Équipements</th><th>Visite technique</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+      {% for vehicle in vehicles %}
+        <tr>
+          <td><span class="badge bg-dark font-monospace">{{ vehicle.registration_number }}</span></td>
+          <td><strong>{{ vehicle.brand_model }}</strong><div class="small text-muted">{{ vehicle.get_category_display }}</div></td>
+          <td>{{ vehicle.seats }} places</td>
+          <td class="small">{% if vehicle.has_ac %}<span class="badge bg-light text-dark border">AC</span>{% endif %} {% if vehicle.has_wifi %}<span class="badge bg-light text-dark border">Wi-Fi</span>{% endif %} {% if vehicle.has_usb %}<span class="badge bg-light text-dark border">USB</span>{% endif %}{% if not vehicle.has_ac and not vehicle.has_wifi and not vehicle.has_usb %}—{% endif %}</td>
+          <td>{{ vehicle.technical_inspection_expiry|date:"d/m/Y" }}{% if vehicle.inspection_expired %}<div class="text-danger small fw-semibold">Expirée</div>{% endif %}</td>
+          <td>{% if vehicle.status == "active" %}<span class="badge bg-success">En service</span>{% elif vehicle.status == "maintenance" %}<span class="badge bg-warning text-dark">En maintenance</span>{% else %}<span class="badge bg-secondary">Hors service</span>{% endif %}</td>
+          <td><div class="d-flex justify-content-end gap-1">
+            <a class="btn btn-sm btn-outline-primary" title="Modifier" href="{% url 'vehicles:update' vehicle.pk %}"><i class="fa-solid fa-pen"></i></a>
+            <form method="post" action="{% url 'vehicles:maintenance' vehicle.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-warning" title="Basculer le statut maintenance" type="submit"><i class="fa-solid fa-wrench"></i></button></form>
+            <form method="post" action="{% url 'vehicles:delete' vehicle.pk %}" onsubmit="return confirm('Supprimer définitivement ce véhicule ?');">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" title="Supprimer" type="submit"><i class="fa-solid fa-trash"></i></button></form>
+          </div></td>
+        </tr>
+      {% empty %}<tr><td colspan="7" class="text-center py-5"><i class="fa-solid fa-bus fa-2x text-muted mb-3"></i><p class="mb-2">Aucun véhicule trouvé.</p><a href="{% url 'vehicles:create' %}" class="m-btn m-btn--primary">Ajouter votre premier véhicule</a></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

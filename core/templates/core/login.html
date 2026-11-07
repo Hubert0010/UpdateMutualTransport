@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <meta name="description" content="Connexion à MutualTransport — Plateforme de mutualisation du transport interurbain au Togo"/>
+    <title>Connexion | MutualTransport</title>
+    <meta name="theme-color" content="#4272d7"/>
+    <link href="{% static 'css/font-face.css' %}" rel="stylesheet" media="all"/>
+    <link rel="preconnect" href="https://rsms.me/"/>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+    <link href="{% static 'vendor/fontawesome-7.3.1/css/all.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'vendor/bootstrap-5.3.8.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'vendor/css-hamburgers/hamburgers.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'css/theme.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'css/app.css' %}" rel="stylesheet" media="all"/>
+  </head>
+  <body class="app auth-page">
+    <a class="visually-hidden-focusable skip-link" href="#auth-form">Aller au formulaire de connexion</a>
+    <main class="login-wrap" id="auth-form">
+      <div class="login-content">
+        <a href="{% url 'core:login' %}" class="auth-brand" aria-label="MutualTransport accueil">
+          <span class="logo-mark" aria-hidden="true">M</span>
+          <span class="logo-text">MutualTransport</span>
+        </a>
+        <h1 class="auth-title">Bienvenue</h1>
+        <p class="auth-subtitle">Connectez-vous pour accéder à votre espace.</p>
+
+        <form class="login-form" action="" method="post" onsubmit="return false">
+          <div class="form-group">
+            <label for="email">Adresse e-mail</label>
+            <input id="email" class="au-input" type="email" name="email"
+                   placeholder="vous@example.com" autocomplete="email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input id="password" class="au-input" type="password" name="password"
+                   placeholder="••••••••" autocomplete="current-password" required>
+          </div>
+          <div class="login-checkbox">
+            <label>
+              <input type="checkbox" name="remember">
+              Se souvenir de moi
+            </label>
+            <a href="#">Mot de passe oublié ?</a>
+          </div>
+          <button class="au-btn au-btn--green" type="submit" id="btn-login"
+                  onclick="handleLogin()">Se connecter</button>
+        </form>
+      </div>
+    </main>
+    <script src="{% static 'js/vanilla-utils.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap-5.3.8.bundle.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap5-init.js' %}"></script>
+    <script src="{% static 'js/main-vanilla.js' %}"></script>
+    <script src="{% static 'js/modern-plugins.js' %}"></script>
+    <script>
+      function handleLogin() {
+        const role = document.querySelector('input[name="role"]:checked').value;
+        if (role === 'admin') {
+          window.location.href = "{% url 'core:admin_dashboard' %}";
+        } else {
+          window.location.href = "{% url 'core:compagnie_dashboard' %}";
+        }
+      }
+
+      // Visual feedback on role selection
+      document.querySelectorAll('.role-option').forEach(label => {
+        label.addEventListener('click', function() {
+          document.querySelectorAll('.role-option').forEach(l => {
+            l.style.borderColor = '#e4e8ee';
+            l.style.background = 'transparent';
+          });
+          this.style.borderColor = '#4272d7';
+          this.style.background = '#f0f4ff';
+        });
+      });
+      // Set initial active
+      document.querySelector('.role-option').style.borderColor = '#4272d7';
+      document.querySelector('.role-option').style.background = '#f0f4ff';
+    </script>
+  </body>
+</html>

@@ -1,0 +1,263 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Réseau &amp; Collecte de Données — Administrateur | MutualTransport{% endblock %}
+{% block user_name %}Admin{% endblock %}
+{% block user_display %}Administrateur{% endblock %}
+{% block user_dropdown_name %}Administrateur{% endblock %}
+{% block user_email %}admin@mutualtransport.tg{% endblock %}
+{% block logo_href %}{% url 'core:admin_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="admin_collecte" %}
+{% include "core/includes/sidebar_admin.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:admin_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li><a href="{% url 'core:admin_compagnies' %}"><i class="fa-solid fa-building"></i>Compagnies</a></li>
+<li><a href="{% url 'core:admin_utilisateurs' %}"><i class="fa-solid fa-users"></i>Utilisateurs</a></li>
+<li><a href="{% url 'core:admin_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li class="active"><a href="{% url 'core:admin_collecte' %}"><i class="fa-solid fa-map-location-dot"></i>Réseau &amp; Collecte</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Réseau National &amp; Collecte Mutualisée</h1>
+    <p class="subtitle">Couverture territoriale, gares routières connectées et flux interurbains au Togo (BF-57).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser les données
+    </button>
+    <button type="button" class="m-btn m-btn--primary" data-bs-toggle="modal" data-bs-target="#modalAddStation">
+      <i class="fa-solid fa-plus"></i> Référencer une gare
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Gares Référencées</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-map-pin"></i></span>
+      </div>
+      <p class="stat-card__value">42</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-circle-check"></i> 5 Régions du Togo</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Lignes Interurbaines</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-route"></i></span>
+      </div>
+      <p class="stat-card__value">68</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> Corridor National N°1</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Taux d'interconnexion</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-network-wired"></i></span>
+      </div>
+      <p class="stat-card__value">92.4%</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> Flux mutualisés</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Départs Quotidiens</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-bus-simple"></i></span>
+      </div>
+      <p class="stat-card__value">185</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-clock"></i> Départs planifiés/jour</p>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Map / Regional Distribution Visualizer -->
+  <div class="col-lg-7 mb-4">
+    <div class="m-card h-100">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Maillage Territorial des 5 Régions Économiques</h3>
+          <p class="m-card__subtitle">Répartition des points d'embarquement et taux de desserte</p>
+        </div>
+      </div>
+      
+      <!-- Visual Region Cards -->
+      <div class="list-group list-group-flush mb-3">
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="badge bg-primary me-2">1</span>
+            <strong>Région Maritime (Lomé, Aného, Tsévié, Tabligbo)</strong>
+            <div class="text-muted small mt-1">16 gares connectées • 8 compagnies opérant • 82 départs/jour</div>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-success-subtle text-success border border-success">44% du trafic</span>
+          </div>
+        </div>
+
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="badge bg-primary me-2">2</span>
+            <strong>Région des Plateaux (Atakpamé, Kpalimé, Notsè, Badou)</strong>
+            <div class="text-muted small mt-1">9 gares connectées • 6 compagnies opérant • 35 départs/jour</div>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-info-subtle text-info border border-info">19% du trafic</span>
+          </div>
+        </div>
+
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="badge bg-primary me-2">3</span>
+            <strong>Région Centrale (Sokodé, Tchamba, Sotouboua, Blitta)</strong>
+            <div class="text-muted small mt-1">6 gares connectées • 5 compagnies opérant • 26 départs/jour</div>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-warning-subtle text-warning border border-warning">14% du trafic</span>
+          </div>
+        </div>
+
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="badge bg-primary me-2">4</span>
+            <strong>Région de la Kara (Kara, Bafilo, Bassar, Niamtougou, Kanté)</strong>
+            <div class="text-muted small mt-1">7 gares connectées • 7 compagnies opérant • 28 départs/jour</div>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-primary-subtle text-primary border border-primary">15% du trafic</span>
+          </div>
+        </div>
+
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="badge bg-primary me-2">5</span>
+            <strong>Région des Savanes (Dapaong, Mango, Cinkassé, Mandouri)</strong>
+            <div class="text-muted small mt-1">4 gares connectées • 4 compagnies opérant • 14 départs/jour</div>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-secondary-subtle text-secondary border">8% du trafic</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 bg-light rounded border">
+        <h6 class="fw-bold mb-1"><i class="fa-solid fa-satellite-dish text-primary me-2"></i>Collecte automatique des flux</h6>
+        <p class="text-muted small mb-0">La plateforme collecte les flux horaires d'embarquement via l'API GTFS / CSV normalisé des transporteurs certifiés.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Corridor National stats & Charts -->
+  <div class="col-lg-5 mb-4">
+    <div class="m-card h-100">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Corridors Stratégiques</h3>
+          <p class="m-card__subtitle">Fréquentation &amp; taux de remplissage</p>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-semibold small">Lomé ↔ Kara (RN1)</span>
+          <span class="text-primary fw-bold small">94% remplissage</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-primary" role="progressbar" style="width: 94%;"></div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-semibold small">Lomé ↔ Kpalimé</span>
+          <span class="text-success fw-bold small">88% remplissage</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-success" role="progressbar" style="width: 88%;"></div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-semibold small">Lomé ↔ Dapaong (Trans-Togolaise)</span>
+          <span class="text-info fw-bold small">91% remplissage</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-info" role="progressbar" style="width: 91%;"></div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-semibold small">Lomé ↔ Aného (Côte Est)</span>
+          <span class="text-warning fw-bold small">79% remplissage</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-warning" role="progressbar" style="width: 79%;"></div>
+        </div>
+      </div>
+
+      <div class="alert alert-light border mt-4">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="fa-solid fa-circle-nodes text-primary"></i>
+          <strong>Interopérabilité des terminaux</strong>
+        </div>
+        <p class="small text-muted mb-0">Les gares partenaires disposent de tablettes de scan QR pour valider l'embarquement même sans réseau stable (mode synchronisation différée).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajout Gare -->
+<div class="modal fade" id="modalAddStation" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Ajouter une gare routière au réseau</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); alert('Gare enregistrée avec succès.');">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nom de la gare</label>
+            <input type="text" class="form-control" placeholder="ex: Gare Routière d'Agbalépédogan" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Région</label>
+              <select class="form-select" required>
+                <option value="">Sélectionner...</option>
+                <option>Maritime</option>
+                <option>Plateaux</option>
+                <option>Centrale</option>
+                <option>Kara</option>
+                <option>Savanes</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Ville</label>
+              <input type="text" class="form-control" placeholder="ex: Lomé" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Coordonnées GPS / Localisation</label>
+            <input type="text" class="form-control" placeholder="6.1725° N, 1.2132° E">
+          </div>
+          <button type="submit" class="m-btn m-btn--primary w-100">Enregistrer la gare</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

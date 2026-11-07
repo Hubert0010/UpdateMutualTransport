@@ -1,0 +1,310 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Gestion des Utilisateurs — Administrateur | MutualTransport{% endblock %}
+{% block user_name %}Admin{% endblock %}
+{% block user_display %}Administrateur{% endblock %}
+{% block user_dropdown_name %}Administrateur{% endblock %}
+{% block user_email %}admin@mutualtransport.tg{% endblock %}
+{% block logo_href %}{% url 'core:admin_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="admin_utilisateurs" %}
+{% include "core/includes/sidebar_admin.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:admin_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li><a href="{% url 'core:admin_compagnies' %}"><i class="fa-solid fa-building"></i>Compagnies</a></li>
+<li class="active"><a href="{% url 'core:admin_utilisateurs' %}"><i class="fa-solid fa-users"></i>Utilisateurs</a></li>
+<li><a href="{% url 'core:admin_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:admin_collecte' %}"><i class="fa-solid fa-map-location-dot"></i>Réseau &amp; Collecte</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Supervision des Utilisateurs</h1>
+    <p class="subtitle">Gestion des comptes clients, gestionnaires de compagnie et modération des accès (BF-38, BF-39).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+    </button>
+    <button type="button" class="m-btn m-btn--primary" data-bs-toggle="modal" data-bs-target="#modalAddUser">
+      <i class="fa-solid fa-user-plus"></i> Créer un utilisateur
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Passagers Inscrits</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-users"></i></span>
+      </div>
+      <p class="stat-card__value">15 420</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> +8.5% ce mois</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Gestionnaires Compagnie</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-user-tie"></i></span>
+      </div>
+      <p class="stat-card__value">38</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-circle-check"></i> Actifs sur le portail</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Comptes Suspendus</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-user-slash"></i></span>
+      </div>
+      <p class="stat-card__value">7</p>
+      <p class="stat-card__delta text-muted"><i class="fa-solid fa-shield-halved"></i> Modération anti-fraude</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Administrateurs Système</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-user-gear"></i></span>
+      </div>
+      <p class="stat-card__value">4</p>
+      <p class="stat-card__delta text-muted"><i class="fa-solid fa-key"></i> Accès super-admin</p>
+    </div>
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="m-card">
+  <div class="filter-bar">
+    <div class="tab-nav" role="tablist">
+      <button class="active" onclick="filterRole('all', this)">Tous les rôles (15 462)</button>
+      <button onclick="filterRole('passager', this)">Passagers (15 420)</button>
+      <button onclick="filterRole('gestionnaire', this)">Gestionnaires (38)</button>
+      <button onclick="filterRole('admin', this)">Admins (4)</button>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="userSearchInput" placeholder="Recherche nom, email, téléphone..." onkeyup="searchUsers()">
+      </div>
+      <select class="form-select form-select-sm" style="width: auto; height: 36px; border-color: var(--m-border);" onchange="filterStatus(this.value)">
+        <option value="">Tous les statuts</option>
+        <option value="Actif">Actif</option>
+        <option value="Suspendu">Suspendu</option>
+        <option value="Non vérifié">Non vérifié</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle" id="usersTable">
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Rôle</th>
+          <th>Téléphone</th>
+          <th>Réservations</th>
+          <th>Inscription</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="user-row role-gestionnaire" data-status="Actif">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c1" style="width: 34px; height: 34px; border-radius: 50%;">KN</div>
+              <div>
+                <strong>Kodjo NAGODE</strong>
+                <div class="text-muted small">k.nagode@nagode-transport.tg</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle">Gestionnaire (NAGODE)</span></td>
+          <td>+228 90 12 34 56</td>
+          <td>—</td>
+          <td>14 Jan. 2024</td>
+          <td><span class="badge-status badge-status--success">Actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Voir détails" data-bs-toggle="modal" data-bs-target="#modalUserDetail"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--primary" title="Modifier rôles"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Désactiver le compte" onclick="toggleUserStatus('Kodjo NAGODE')"><i class="fa-solid fa-user-lock"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="user-row role-passager" data-status="Actif">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c3" style="width: 34px; height: 34px; border-radius: 50%;">AA</div>
+              <div>
+                <strong>Afiwa AGBODJAN</strong>
+                <div class="text-muted small">afiwa.agbodjan@gmail.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark border">Passager</span></td>
+          <td>+228 91 45 78 12</td>
+          <td><strong>14</strong> voyages</td>
+          <td>03 Mar. 2025</td>
+          <td><span class="badge-status badge-status--success">Actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Voir profil"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--primary" title="Historique trajets"><i class="fa-solid fa-ticket"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Suspendre" onclick="toggleUserStatus('Afiwa AGBODJAN')"><i class="fa-solid fa-user-lock"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="user-row role-passager" data-status="Actif">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c2" style="width: 34px; height: 34px; border-radius: 50%;">EK</div>
+              <div>
+                <strong>Emmanuel KOUTOUMNA</strong>
+                <div class="text-muted small">e.koutoumna@univ-lome.tg</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark border">Passager</span></td>
+          <td>+228 99 22 11 00</td>
+          <td><strong>8</strong> voyages</td>
+          <td>18 Mai 2025</td>
+          <td><span class="badge-status badge-status--success">Actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Voir profil"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--primary" title="Historique trajets"><i class="fa-solid fa-ticket"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Suspendre"><i class="fa-solid fa-user-lock"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="user-row role-passager" data-status="Suspendu">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--danger" style="width: 34px; height: 34px; border-radius: 50%;">SB</div>
+              <div>
+                <strong>Salifou BOUKARI</strong>
+                <div class="text-muted small">salifou.b@yahoo.fr</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark border">Passager</span></td>
+          <td>+228 92 00 33 44</td>
+          <td><strong>1</strong> voyage</td>
+          <td>11 Août 2026</td>
+          <td><span class="badge-status badge-status--danger">Suspendu (Impayé T-Money)</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Voir profil"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--success" title="Débloquer le compte" onclick="toggleUserStatus('Salifou BOUKARI')"><i class="fa-solid fa-unlock"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="user-row role-admin" data-status="Actif">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c4" style="width: 34px; height: 34px; border-radius: 50%;">AD</div>
+              <div>
+                <strong>Super Administrateur MT</strong>
+                <div class="text-muted small">admin@mutualtransport.tg</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle">Administrateur Système</span></td>
+          <td>+228 22 21 00 00</td>
+          <td>—</td>
+          <td>01 Jan. 2024</td>
+          <td><span class="badge-status badge-status--success">Actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Voir profil"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--primary" title="Sécurité 2FA"><i class="fa-solid fa-shield-halved"></i></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Détail Utilisateur -->
+<div class="modal fade" id="modalUserDetail" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Détails du compte — Kodjo NAGODE</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Compagnie rattachée :</strong> NAGODE TRANSPORT &amp; LOGISTIQUE</p>
+        <p><strong>Dernière connexion :</strong> Aujourd'hui à 19:42 (IP: 154.72.164.12 - Lomé)</p>
+        <p><strong>Permissions :</strong> Gestion des trajets, tarifs, véhicules, plannings et validation des passagers au départ.</p>
+        <div class="alert alert-info py-2 small">
+          <i class="fa-solid fa-circle-info me-1"></i> Ce compte possède les droits de gérant certifié avec signature électronique.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn--ghost" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="m-btn m-btn--primary" onclick="alert('Lien de réinitialisation envoyé par SMS & Email.');" data-bs-dismiss="modal">
+          <i class="fa-solid fa-key"></i> Réinitialiser mot de passe
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterRole(role, btn) {
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('.user-row');
+  rows.forEach(r => {
+    if (role === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains('role-' + role) ? '' : 'none';
+    }
+  });
+}
+
+function searchUsers() {
+  const query = document.getElementById('userSearchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.user-row');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function filterStatus(status) {
+  const rows = document.querySelectorAll('.user-row');
+  rows.forEach(r => {
+    if (!status || r.getAttribute('data-status') === status) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+
+function toggleUserStatus(name) {
+  if (confirm("Voulez-vous modifier le statut de l'utilisateur " + name + " ?")) {
+    alert("Statut mis à jour pour " + name);
+  }
+}
+</script>
+{% endblock %}

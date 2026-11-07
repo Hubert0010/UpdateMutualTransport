@@ -1,0 +1,449 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Gestion des Compagnies — Administrateur | MutualTransport{% endblock %}
+{% block user_name %}Admin{% endblock %}
+{% block user_display %}Administrateur{% endblock %}
+{% block user_dropdown_name %}Administrateur{% endblock %}
+{% block user_email %}admin@mutualtransport.tg{% endblock %}
+{% block logo_href %}{% url 'core:admin_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="admin_compagnies" %}
+{% include "core/includes/sidebar_admin.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:admin_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li class="active"><a href="{% url 'core:admin_compagnies' %}"><i class="fa-solid fa-building"></i>Compagnies</a></li>
+<li><a href="{% url 'core:admin_utilisateurs' %}"><i class="fa-solid fa-users"></i>Utilisateurs</a></li>
+<li><a href="{% url 'core:admin_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:admin_collecte' %}"><i class="fa-solid fa-map-location-dot"></i>Réseau &amp; Collecte</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Validation &amp; Gestion des Compagnies</h1>
+    <p class="subtitle">Gestion des agréments, validation des demandes d'adhésion (BF-37) et supervision du réseau de transporteurs.</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+    </button>
+    <button type="button" class="m-btn m-btn--primary" data-bs-toggle="modal" data-bs-target="#modalAddCompany">
+      <i class="fa-solid fa-plus"></i> Inviter une compagnie
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Compagnies Partenaires</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-building-circle-check"></i></span>
+      </div>
+      <p class="stat-card__value">12</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-circle-check"></i> Actives sur le réseau</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">En attente d'agrément</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-clock-rotate-left"></i></span>
+      </div>
+      <p class="stat-card__value">3</p>
+      <p class="stat-card__delta" style="color: var(--m-warning);"><i class="fa-solid fa-triangle-exclamation"></i> Action requise</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Véhicules Référencés</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-bus"></i></span>
+      </div>
+      <p class="stat-card__value">148</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> +12 ce mois</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Taux d'approbation</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-percent"></i></span>
+      </div>
+      <p class="stat-card__value">85.7%</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-shield-halved"></i> Audit de conformité</p>
+    </div>
+  </div>
+</div>
+
+<!-- Main Table Card -->
+<div class="m-card">
+  <div class="filter-bar">
+    <div class="tab-nav" role="tablist">
+      <button class="active" onclick="filterTable('all', this)">Toutes (16)</button>
+      <button onclick="filterTable('attente', this)">En attente (3)</button>
+      <button onclick="filterTable('active', this)">Validées (12)</button>
+      <button onclick="filterTable('suspendue', this)">Suspendues (1)</button>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="companySearchInput" placeholder="Rechercher par nom, ville, n° RCCM..." onkeyup="searchCompanies()">
+      </div>
+      <select class="form-select form-select-sm" style="width: auto; height: 36px; border-color: var(--m-border);" onchange="filterRegion(this.value)">
+        <option value="">Toutes les régions</option>
+        <option value="Maritime">Maritime (Lomé)</option>
+        <option value="Plateaux">Plateaux (Atakpamé/Kpalimé)</option>
+        <option value="Centrale">Centrale (Sokodé)</option>
+        <option value="Kara">Kara</option>
+        <option value="Savanes">Savanes (Dapaong)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle" id="companiesTable">
+      <thead>
+        <tr>
+          <th>Compagnie</th>
+          <th>Siège / Région</th>
+          <th>Contact &amp; Email</th>
+          <th>Flotte</th>
+          <th>Date de demande</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Compagnie 1: En attente -->
+        <tr class="comp-row status-attente" data-region="Savanes">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c3" style="width: 36px; height: 36px; font-weight: 700;">SA</div>
+              <div>
+                <strong>SAVANES EXPRESS VOYAGES</strong>
+                <div class="text-muted" style="font-size: 11.5px;">RCCM: TG-DAP-2024-B-0192</div>
+              </div>
+            </div>
+          </td>
+          <td>Dapaong <span class="badge bg-light text-dark border">Savanes</span></td>
+          <td>+228 90 23 11 44<br><small class="text-muted">contact@savanesexpress.tg</small></td>
+          <td><strong>12</strong> bus</td>
+          <td>21 Oct. 2026</td>
+          <td><span class="badge-status badge-status--warning">En attente d'agrément</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon btn-icon--primary" title="Examiner le dossier" data-bs-toggle="modal" data-bs-target="#modalDossier1">
+                <i class="fa-solid fa-file-shield"></i>
+              </button>
+              <button class="btn-icon btn-icon--success" title="Valider la compagnie" onclick="validateCompany('SAVANES EXPRESS VOYAGES')">
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button class="btn-icon btn-icon--danger" title="Refuser le dossier" onclick="rejectCompany('SAVANES EXPRESS VOYAGES')">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Compagnie 2: En attente -->
+        <tr class="comp-row status-attente" data-region="Maritime">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c1" style="width: 36px; height: 36px; font-weight: 700;">LT</div>
+              <div>
+                <strong>LITTORAL LOME-ANEHO LINES</strong>
+                <div class="text-muted" style="font-size: 11.5px;">RCCM: TG-LOM-2023-B-8831</div>
+              </div>
+            </div>
+          </td>
+          <td>Lomé <span class="badge bg-light text-dark border">Maritime</span></td>
+          <td>+228 91 55 44 22<br><small class="text-muted">direction@littoral-lines.tg</small></td>
+          <td><strong>8</strong> minibus</td>
+          <td>19 Oct. 2026</td>
+          <td><span class="badge-status badge-status--warning">En attente d'agrément</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon btn-icon--primary" title="Examiner le dossier" data-bs-toggle="modal" data-bs-target="#modalDossier1">
+                <i class="fa-solid fa-file-shield"></i>
+              </button>
+              <button class="btn-icon btn-icon--success" title="Valider la compagnie" onclick="validateCompany('LITTORAL LOME-ANEHO')">
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button class="btn-icon btn-icon--danger" title="Refuser" onclick="rejectCompany('LITTORAL LOME-ANEHO')">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Compagnie 3: Validée / Active -->
+        <tr class="comp-row status-active" data-region="Maritime">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c1" style="width: 36px; height: 36px; font-weight: 700;">NG</div>
+              <div>
+                <strong>NAGODE TRANSPORT &amp; LOGISTIQUE</strong>
+                <div class="text-muted" style="font-size: 11.5px;">RCCM: TG-LOM-2018-B-0421</div>
+              </div>
+            </div>
+          </td>
+          <td>Lomé - Agbalépédogan</td>
+          <td>+228 22 25 10 90<br><small class="text-muted">contact@nagode-transport.tg</small></td>
+          <td><strong>24</strong> bus climatisés</td>
+          <td>14 Jan. 2024</td>
+          <td><span class="badge-status badge-status--success">Agréée &amp; Active</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Consulter la fiche" data-bs-toggle="modal" data-bs-target="#modalDetailsNagode">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+              <button class="btn-icon btn-icon--danger" title="Suspendre temporairement" onclick="suspendCompany('NAGODE TRANSPORT')">
+                <i class="fa-solid fa-ban"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Compagnie 4: Validée / Active -->
+        <tr class="comp-row status-active" data-region="Centrale">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c2" style="width: 36px; height: 36px; font-weight: 700;">LK</div>
+              <div>
+                <strong>LK LA POSTALE INTERURBAIN</strong>
+                <div class="text-muted" style="font-size: 11.5px;">RCCM: TG-SOK-2019-B-1102</div>
+              </div>
+            </div>
+          </td>
+          <td>Sokodé <span class="badge bg-light text-dark border">Centrale</span></td>
+          <td>+228 92 88 12 00<br><small class="text-muted">info@lapostale.tg</small></td>
+          <td><strong>18</strong> autocars</td>
+          <td>02 Fév. 2024</td>
+          <td><span class="badge-status badge-status--success">Agréée &amp; Active</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Consulter la fiche"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Suspendre"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Compagnie 5: Validée / Active -->
+        <tr class="comp-row status-active" data-region="Plateaux">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--c4" style="width: 36px; height: 36px; font-weight: 700;">KP</div>
+              <div>
+                <strong>KLOTO VOYAGES CONFORT</strong>
+                <div class="text-muted" style="font-size: 11.5px;">RCCM: TG-KPA-2021-B-0089</div>
+              </div>
+            </div>
+          </td>
+          <td>Kpalimé <span class="badge bg-light text-dark border">Plateaux</span></td>
+          <td>+228 90 44 33 11<br><small class="text-muted">contact@klotovoyages.tg</small></td>
+          <td><strong>10</strong> minibus VIP</td>
+          <td>12 Mar. 2024</td>
+          <td><span class="badge-status badge-status--success">Agréée &amp; Active</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Consulter la fiche"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Suspendre"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Compagnie 6: Suspendue -->
+        <tr class="comp-row status-suspendue" data-region="Kara">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-card__icon stat-card__icon--danger" style="width: 36px; height: 36px; font-weight: 700;">KN</div>
+              <div>
+                <strong>KOZA NORD TRANSPORT</strong>
+                <div class="text-muted" style="font-size: 11.5px;">RCCM: TG-KAR-2020-B-0418</div>
+              </div>
+            </div>
+          </td>
+          <td>Kara <span class="badge bg-light text-dark border">Kara</span></td>
+          <td>+228 99 11 22 33<br><small class="text-muted">kozanord@gmail.com</small></td>
+          <td><strong>6</strong> bus</td>
+          <td>05 Mai 2024</td>
+          <td><span class="badge-status badge-status--danger">Suspendue (Non-conformité)</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Consulter motif"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn-icon btn-icon--success" title="Lever la suspension"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal 1: Examen du dossier compagnie en attente (BF-37) -->
+<div class="modal fade" id="modalDossier1" tabindex="-1" aria-labelledby="modalDossierTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius); border: 1px solid var(--m-border);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--m-divider);">
+        <div>
+          <h5 class="modal-title fw-bold" id="modalDossierTitle">Examen de la demande d'adhésion — SAVANES EXPRESS</h5>
+          <span class="badge-status badge-status--warning">Dossier déposé le 21/10/2026</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label text-muted small mb-1">Raison sociale</label>
+            <div class="fw-semibold">SAVANES EXPRESS VOYAGES SARL</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small mb-1">Représentant légal</label>
+            <div class="fw-semibold">M. Koffi KOMBATE (Directeur Général)</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small mb-1">Téléphone &amp; Email</label>
+            <div>+228 90 23 11 44 / contact@savanesexpress.tg</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small mb-1">Lignes prévues</label>
+            <div>Lomé ↔ Dapaong, Kara ↔ Dapaong, Mango ↔ Cinkassé</div>
+          </div>
+        </div>
+
+        <h6 class="fw-bold mb-3"><i class="fa-solid fa-paperclip text-primary me-2"></i>Documents justificatifs obligatoires</h6>
+        <div class="list-group mb-4">
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa-solid fa-file-pdf text-danger me-2"></i>
+              <strong>Licence d'exploitation de transporteur interurbain</strong>
+              <div class="text-muted small">Ministère des Transports — N° 2025/MITR/DTT/0842 (Valide jusqu'en 2028)</div>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check"></i> Conforme</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa-solid fa-file-pdf text-danger me-2"></i>
+              <strong>Registre du Commerce et du Crédit Mobilier (RCCM)</strong>
+              <div class="text-muted small">TG-DAP-2024-B-0192 (Certifié conforme)</div>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check"></i> Conforme</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa-solid fa-file-shield text-primary me-2"></i>
+              <strong>Attestation d'assurance flotte responsabilité civile passagers</strong>
+              <div class="text-muted small">Police d'assurance GTA-C2A N° 884-2026-FLOTTE</div>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check"></i> Conforme</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa-solid fa-file-lines text-muted me-2"></i>
+              <strong>Attestation de régularité fiscale (OTR)</strong>
+              <div class="text-muted small">En cours de renouvellement pour l'exercice 2026</div>
+            </div>
+            <span class="badge bg-warning-subtle text-warning border border-warning"><i class="fa-solid fa-triangle-exclamation"></i> À vérifier</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Note d'évaluation / Motif d'approbation ou de rejet</label>
+          <textarea class="form-control" rows="3" placeholder="Indiquer un commentaire officiel transmis par email au responsable de la compagnie..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid var(--m-divider);">
+        <button type="button" class="m-btn m-btn--ghost" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="m-btn btn-danger text-white" onclick="alert('Dossier rejeté avec notification transmise au transporteur.');" data-bs-dismiss="modal">
+          <i class="fa-solid fa-xmark"></i> Rejeter le dossier
+        </button>
+        <button type="button" class="m-btn m-btn--primary" onclick="alert('Compagnie SAVANES EXPRESS validée avec succès ! Ses accès au portail sont activés.');" data-bs-dismiss="modal">
+          <i class="fa-solid fa-check"></i> Valider et Activer la compagnie
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Détails Nagode -->
+<div class="modal fade" id="modalDetailsNagode" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">NAGODE TRANSPORT &amp; LOGISTIQUE</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Directeur :</strong> M. Kodjo NAGODE</p>
+        <p><strong>Gares principales :</strong> Lomé (Grand Marché, Agbalépédogan), Kara, Cinkassé</p>
+        <p><strong>Réservations traitées :</strong> 2 450 billets</p>
+        <p><strong>Note satisfaction clients :</strong> <span class="text-warning">★ ★ ★ ★ ☆</span> (4.4/5)</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn--ghost" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterTable(status, btn) {
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('.comp-row');
+  rows.forEach(r => {
+    if (status === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains('status-' + status) ? '' : 'none';
+    }
+  });
+}
+
+function searchCompanies() {
+  const query = document.getElementById('companySearchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.comp-row');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function filterRegion(reg) {
+  const rows = document.querySelectorAll('.comp-row');
+  rows.forEach(r => {
+    if (!reg || r.getAttribute('data-region') === reg) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+
+function validateCompany(name) {
+  if (confirm("Confirmez-vous la validation et l'agrément de la compagnie " + name + " ?")) {
+    alert("Compagnie " + name + " agréée avec succès.");
+  }
+}
+
+function rejectCompany(name) {
+  const reason = prompt("Veuillez indiquer le motif du refus :");
+  if (reason) {
+    alert("Refus notifié pour " + name + " : " + reason);
+  }
+}
+
+function suspendCompany(name) {
+  if (confirm("Voulez-vous suspendre temporairement les ventes de " + name + " ?")) {
+    alert("Compagnie " + name + " suspendue.");
+  }
+}
+</script>
+{% endblock %}

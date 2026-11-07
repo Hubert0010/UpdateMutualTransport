@@ -1,0 +1,204 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Profil de la Compagnie — NAGODE Transport | MutualTransport{% endblock %}
+{% block user_name %}Nagode Admin{% endblock %}
+{% block user_display %}NAGODE Transport{% endblock %}
+{% block user_dropdown_name %}Kodjo NAGODE (Gérant){% endblock %}
+{% block user_email %}k.nagode@nagode-transport.tg{% endblock %}
+{% block logo_href %}{% url 'core:compagnie_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="compagnie_profil" %}
+{% include "core/includes/sidebar_compagnie.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li><a href="{% url 'core:compagnie_vehicules' %}"><i class="fa-solid fa-bus"></i>Véhicules</a></li>
+<li><a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a></li>
+<li><a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:compagnie_regles' %}"><i class="fa-solid fa-scale-balanced"></i>Règles d'annulation</a></li>
+<li><a href="{% url 'core:compagnie_import' %}"><i class="fa-solid fa-file-import"></i>Import de données</a></li>
+<li class="active"><a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building-circle-check"></i>Profil compagnie</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Profil &amp; Informations de la Compagnie</h1>
+    <p class="subtitle">Identité légale, agréments officiels, comptes marchands et coordonnées (BF-29).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Annuler
+    </button>
+    <button type="button" class="m-btn m-btn--primary" onclick="alert('Profil mis à jour avec succès !');">
+      <i class="fa-solid fa-floppy-disk"></i> Enregistrer les modifications
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Colonne gauche : Carte identité compagnie -->
+  <div class="col-lg-4 mb-4">
+    <div class="m-card text-center mb-4">
+      <div class="stat-card__icon stat-card__icon--c1 mx-auto mb-3" style="width: 80px; height: 80px; font-size: 32px; font-weight: 700; border-radius: 16px;">
+        NG
+      </div>
+      <h4 class="fw-bold mb-1">NAGODE TRANSPORT</h4>
+      <p class="text-muted small mb-2">Transport Interurbain &amp; Logistique SARL</p>
+      <span class="badge-status badge-status--success mb-3">Compagnie Agréée &amp; Certifiée</span>
+      
+      <div class="d-flex justify-content-center gap-2 mb-3">
+        <button class="m-btn m-btn--ghost" style="font-size: 12px; height: 32px;" onclick="alert('Charger un nouveau logo...');">
+          <i class="fa-solid fa-camera"></i> Changer le logo
+        </button>
+      </div>
+
+      <div class="list-group list-group-flush text-start small border-top pt-3">
+        <div class="list-group-item px-0 py-2 d-flex justify-content-between">
+          <span class="text-muted">RCCM</span>
+          <span class="fw-semibold">TG-LOM-2018-B-0421</span>
+        </div>
+        <div class="list-group-item px-0 py-2 d-flex justify-content-between">
+          <span class="text-muted">NIF (OTR)</span>
+          <span class="fw-semibold">1000849201</span>
+        </div>
+        <div class="list-group-item px-0 py-2 d-flex justify-content-between">
+          <span class="text-muted">Licence Transport</span>
+          <span class="fw-semibold">N° 2024/MITR/DTT/012</span>
+        </div>
+        <div class="list-group-item px-0 py-2 d-flex justify-content-between">
+          <span class="text-muted">Adhésion réseau</span>
+          <span class="fw-semibold">14 Janvier 2024</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Récompenses & Note satisfaction -->
+    <div class="m-card">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Indice Qualité de Service</h3>
+          <p class="m-card__subtitle">Évaluation par les voyageurs</p>
+        </div>
+      </div>
+      <div class="text-center py-2">
+        <h2 class="display-6 fw-bold text-primary mb-0">4.8 <span class="fs-6 text-muted">/ 5</span></h2>
+        <div class="text-warning mb-2">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star-half-stroke"></i>
+        </div>
+        <p class="text-muted small">Basé sur 1 840 avis de passagers vérifiés</p>
+      </div>
+      <div class="small">
+        <div class="d-flex justify-content-between mb-1">
+          <span>Ponctualité des départs</span>
+          <strong>96%</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-1">
+          <span>Confort &amp; Climatisation</span>
+          <strong>94%</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Courtoisie des équipages</span>
+          <strong>92%</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colonne droite : Formulaire profil et comptes marchands -->
+  <div class="col-lg-8 mb-4">
+    <div class="m-card mb-4">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Informations Générales &amp; Contacts</h3>
+          <p class="m-card__subtitle">Visibles par les passagers sur le site et l'application</p>
+        </div>
+      </div>
+
+      <form onsubmit="event.preventDefault();">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Raison Sociale</label>
+            <input type="text" class="form-control" value="NAGODE TRANSPORT &amp; LOGISTIQUE SARL">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Nom Commercial</label>
+            <input type="text" class="form-control" value="NAGODE Transport">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Gérant / Représentant Légal</label>
+            <input type="text" class="form-control" value="Kodjo NAGODE">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Téléphone Principal Service Client</label>
+            <input type="tel" class="form-control" value="+228 22 25 10 90">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Téléphone Mobile / WhatsApp</label>
+            <input type="tel" class="form-control" value="+228 90 12 34 56">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Email Professionnel</label>
+            <input type="email" class="form-control" value="contact@nagode-transport.tg">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Adresse du Siège Social &amp; Gare Principale</label>
+          <input type="text" class="form-control" value="Boulevard de la Kara, Quartier Agbalépédogan, Lomé — Togo">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Description de la compagnie</label>
+          <textarea class="form-control" rows="3">Spécialiste de la liaison interurbaine Togo Nord-Sud depuis 2018. Notre flotte moderne d'autocars VIP climatisés assure des liaisons quotidiennes sécurisées entre Lomé, Sokodé, Kara et Dapaong avec WiFi et prises de recharge à bord.</textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- Coordonnées bancaires et Mobile Money pour reversement des billets -->
+    <div class="m-card">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Comptes de Règlement &amp; Encaissement (Paiements Mobiles)</h3>
+          <p class="m-card__subtitle">Comptes sur lesquels la plateforme vire les recettes nettes de vos billets vendus</p>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-lock"></i> Sécurisé</span>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Numéro Marchand T-Money (Togocom)</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-mobile-screen text-success"></i></span>
+            <input type="text" class="form-control" value="TM-NAGODE-88412">
+          </div>
+          <div class="form-text small">Règlement instantané des réservations T-Money</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Compte Marchand Moov Flooz</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-mobile-screen text-info"></i></span>
+            <input type="text" class="form-control" value="FLZ-90123456">
+          </div>
+          <div class="form-text small">Règlement instantané des réservations Flooz</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Relevé d'Identité Bancaire (RIB / IBAN - UEMOA)</label>
+          <input type="text" class="form-control font-monospace" value="TG05 TG02 4010 0100 2489 1234 5601">
+          <div class="form-text small">Banque Togolaise pour le Commerce et l'Industrie (BTCI / IB Bank) — Agence Lomé Centrale</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

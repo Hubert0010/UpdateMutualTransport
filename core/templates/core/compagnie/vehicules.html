@@ -1,0 +1,343 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Gestion de la Flotte — NAGODE Transport | MutualTransport{% endblock %}
+{% block user_name %}Nagode Admin{% endblock %}
+{% block user_display %}NAGODE Transport{% endblock %}
+{% block user_dropdown_name %}Kodjo NAGODE (Gérant){% endblock %}
+{% block user_email %}k.nagode@nagode-transport.tg{% endblock %}
+{% block logo_href %}{% url 'core:compagnie_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="compagnie_vehicules" %}
+{% include "core/includes/sidebar_compagnie.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li class="active"><a href="{% url 'core:compagnie_vehicules' %}"><i class="fa-solid fa-bus"></i>Véhicules</a></li>
+<li><a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a></li>
+<li><a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:compagnie_regles' %}"><i class="fa-solid fa-scale-balanced"></i>Règles d'annulation</a></li>
+<li><a href="{% url 'core:compagnie_import' %}"><i class="fa-solid fa-file-import"></i>Import de données</a></li>
+<li><a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building-circle-check"></i>Profil compagnie</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Gestion de la Flotte de Véhicules</h1>
+    <p class="subtitle">Inventaire, statut technique, capacités et affectation des autocars (BF-30).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+    </button>
+    <button type="button" class="m-btn m-btn--primary" data-bs-toggle="modal" data-bs-target="#modalAddBus">
+      <i class="fa-solid fa-plus"></i> Ajouter un véhicule
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Total Véhicules</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-bus"></i></span>
+      </div>
+      <p class="stat-card__value">24</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-check"></i> Flotte certifiée OTR/DTT</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">En Service Actif</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-circle-play"></i></span>
+      </div>
+      <p class="stat-card__value">22</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-road"></i> Prêts au départ</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">En Révision / Garage</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-wrench"></i></span>
+      </div>
+      <p class="stat-card__value">2</p>
+      <p class="stat-card__delta text-muted"><i class="fa-solid fa-clock"></i> Visite semestrielle</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Capacité d'Accueil Totale</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-chair"></i></span>
+      </div>
+      <p class="stat-card__value">1 240 <small style="font-size: 13px; font-weight: 500;">Sièges</small></p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-bolt"></i> Réseau mutualisé</p>
+    </div>
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="m-card">
+  <div class="filter-bar">
+    <div class="tab-nav" role="tablist">
+      <button class="active" onclick="filterBuses('all', this)">Tous (24)</button>
+      <button onclick="filterBuses('service', this)">En service (22)</button>
+      <button onclick="filterBuses('maintenance', this)">En maintenance (2)</button>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="busSearchInput" placeholder="Immatriculation, modèle, type..." onkeyup="searchBuses()">
+      </div>
+      <select class="form-select form-select-sm" style="width: auto; height: 36px; border-color: var(--m-border);" onchange="filterCategory(this.value)">
+        <option value="">Tous types</option>
+        <option value="Grand Autocar">Grand Autocar VIP</option>
+        <option value="Bus Confort">Bus Confort</option>
+        <option value="Minibus Express">Minibus Express</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle" id="busTable">
+      <thead>
+        <tr>
+          <th>Immatriculation</th>
+          <th>Modèle / Catégorie</th>
+          <th>Capacité</th>
+          <th>Équipements</th>
+          <th>Visite Technique</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="bus-row status-service" data-category="Grand Autocar">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark font-monospace px-2 py-1">TG-8412-BP</span>
+              <span class="text-muted small">#BUS-01</span>
+            </div>
+          </td>
+          <td>
+            <strong>Mercedes-Benz Tourismo</strong>
+            <div class="text-muted small">Grand Autocar VIP (2022)</div>
+          </td>
+          <td><strong>60</strong> places assises</td>
+          <td>
+            <span class="badge bg-light text-dark border me-1"><i class="fa-solid fa-snowflake text-primary"></i> AC</span>
+            <span class="badge bg-light text-dark border me-1"><i class="fa-solid fa-wifi text-success"></i> WiFi</span>
+            <span class="badge bg-light text-dark border"><i class="fa-solid fa-plug text-warning"></i> USB</span>
+          </td>
+          <td>Valide jusqu'au <strong>15/12/2026</strong></td>
+          <td><span class="badge-status badge-status--success">En service actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Modifier"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-icon" title="Historique trajets"><i class="fa-solid fa-route"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Mettre en révision" onclick="toggleMaintenance('TG-8412-BP')"><i class="fa-solid fa-wrench"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="bus-row status-service" data-category="Bus Confort">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark font-monospace px-2 py-1">TG-1190-BN</span>
+              <span class="text-muted small">#BUS-04</span>
+            </div>
+          </td>
+          <td>
+            <strong>Scania Touring HD</strong>
+            <div class="text-muted small">Bus Confort Interurbain</div>
+          </td>
+          <td><strong>50</strong> places assises</td>
+          <td>
+            <span class="badge bg-light text-dark border me-1"><i class="fa-solid fa-snowflake text-primary"></i> AC</span>
+            <span class="badge bg-light text-dark border"><i class="fa-solid fa-plug text-warning"></i> USB</span>
+          </td>
+          <td>Valide jusqu'au <strong>28/01/2027</strong></td>
+          <td><span class="badge-status badge-status--success">En service actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Modifier"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-icon" title="Historique trajets"><i class="fa-solid fa-route"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Mettre en révision" onclick="toggleMaintenance('TG-1190-BN')"><i class="fa-solid fa-wrench"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="bus-row status-service" data-category="Minibus Express">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark font-monospace px-2 py-1">TG-5520-BL</span>
+              <span class="text-muted small">#BUS-09</span>
+            </div>
+          </td>
+          <td>
+            <strong>Toyota Coaster 4x2</strong>
+            <div class="text-muted small">Minibus Express Rapide</div>
+          </td>
+          <td><strong>30</strong> places</td>
+          <td>
+            <span class="badge bg-light text-dark border"><i class="fa-solid fa-snowflake text-primary"></i> AC</span>
+          </td>
+          <td>Valide jusqu'au <strong>10/11/2026</strong></td>
+          <td><span class="badge-status badge-status--success">En service actif</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon" title="Modifier"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-icon" title="Historique trajets"><i class="fa-solid fa-route"></i></button>
+              <button class="btn-icon btn-icon--danger" title="Mettre en révision" onclick="toggleMaintenance('TG-5520-BL')"><i class="fa-solid fa-wrench"></i></button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="bus-row status-maintenance" data-category="Grand Autocar">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-danger font-monospace px-2 py-1">TG-3011-BM</span>
+              <span class="text-muted small">#BUS-02</span>
+            </div>
+          </td>
+          <td>
+            <strong>Mercedes-Benz Tourismo</strong>
+            <div class="text-muted small">Grand Autocar</div>
+          </td>
+          <td><strong>60</strong> places</td>
+          <td>
+            <span class="badge bg-light text-dark border me-1"><i class="fa-solid fa-snowflake text-primary"></i> AC</span>
+            <span class="badge bg-light text-dark border"><i class="fa-solid fa-wifi text-success"></i> WiFi</span>
+          </td>
+          <td><span class="text-danger fw-bold">Visite à renouveler</span></td>
+          <td><span class="badge-status badge-status--warning">En maintenance garage</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="btn-icon btn-icon--success" title="Remettre en service" onclick="alert('Véhicule TG-3011-BM remis en service actif.');"><i class="fa-solid fa-circle-check"></i></button>
+              <button class="btn-icon" title="Consulter carnet entretien"><i class="fa-solid fa-clipboard-list"></i></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Ajout Véhicule -->
+<div class="modal fade" id="modalAddBus" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Ajouter un autocar à la flotte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); alert('Véhicule enregistré avec succès !');">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Immatriculation (Togo)</label>
+              <input type="text" class="form-control" placeholder="ex: TG-1234-BR" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Marque &amp; Modèle</label>
+              <input type="text" class="form-control" placeholder="ex: Scania Touring" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Catégorie</label>
+              <select class="form-select" required>
+                <option>Grand Autocar VIP</option>
+                <option>Bus Confort</option>
+                <option>Minibus Express</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Nombre de sièges (Capacité)</label>
+              <input type="number" class="form-control" value="50" min="15" max="80" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Équipements à bord</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="eqAc" checked>
+                <label class="form-check-label" for="eqAc">Climatisation</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="eqWifi" checked>
+                <label class="form-check-label" for="eqWifi">WiFi 4G</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="eqUsb" checked>
+                <label class="form-check-label" for="eqUsb">Prises USB individuelles</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Date d'expiration visite technique</label>
+              <input type="date" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Numéro police d'assurance</label>
+              <input type="text" class="form-control" placeholder="Police d'assurance..." required>
+            </div>
+          </div>
+
+          <button type="submit" class="m-btn m-btn--primary w-100">Enregistrer dans la flotte</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterBuses(status, btn) {
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('.bus-row');
+  rows.forEach(r => {
+    if (status === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains('status-' + status) ? '' : 'none';
+    }
+  });
+}
+
+function searchBuses() {
+  const query = document.getElementById('busSearchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.bus-row');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function filterCategory(cat) {
+  const rows = document.querySelectorAll('.bus-row');
+  rows.forEach(r => {
+    if (!cat || r.getAttribute('data-category').includes(cat)) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+
+function toggleMaintenance(plate) {
+  if (confirm("Transférer le bus " + plate + " en révision technique ?")) {
+    alert("Statut du bus " + plate + " modifié.");
+  }
+}
+</script>
+{% endblock %}

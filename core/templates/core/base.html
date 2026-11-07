@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <meta name="description" content="MutualTransport - Plateforme de mutualisation du transport interurbain au Togo"/>
+    <title>{% block title %}MutualTransport{% endblock %}</title>
+    <meta name="theme-color" content="#4272d7"/>
+    <link href="{% static 'css/font-face.css' %}" rel="stylesheet" media="all"/>
+    <link rel="preconnect" href="https://rsms.me/"/>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+    <link href="{% static 'vendor/fontawesome-7.3.1/css/all.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'vendor/bootstrap-5.3.8.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'vendor/css-hamburgers/hamburgers.min.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'css/theme.css' %}" rel="stylesheet" media="all"/>
+    <link href="{% static 'css/app.css' %}" rel="stylesheet" media="all"/>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="app">
+    <a class="visually-hidden-focusable skip-link" href="#main-content">Aller au contenu principal</a>
+    <div class="page-wrapper">
+
+      <!-- ===== Mobile Header ===== -->
+      <header class="header-mobile d-block d-lg-none">
+        <div class="header-mobile__bar">
+          <div class="container-fluid">
+            <div class="header-mobile-inner">
+              <a class="logo" href="{% url 'core:login' %}">
+                <img src="{% static 'images/icon/logo.png' %}" alt="MutualTransport">
+              </a>
+              <button class="hamburger hamburger--slider" type="button" aria-label="Basculer la navigation">
+                <span class="hamburger-box"><span class="hamburger-inner"></span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="navbar-mobile">
+          <div class="container-fluid">
+            <ul class="navbar-mobile__list list-unstyled">
+              {% block mobile_nav %}{% endblock %}
+            </ul>
+          </div>
+        </nav>
+      </header>
+
+      <!-- ===== Sidebar ===== -->
+      <aside class="menu-sidebar" id="main-sidebar">
+        <div class="logo">
+          <a class="logo-link" href="{% block logo_href %}{% url 'core:login' %}{% endblock %}" aria-label="MutualTransport accueil">
+            <span class="logo-mark" aria-hidden="true">M</span>
+            <span class="logo-text">MutualTransport</span>
+          </a>
+          <button class="sidebar-close js-sidebar-toggle" type="button" aria-label="Fermer la navigation">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="menu-sidebar__content js-scrollbar1">
+          <nav class="navbar-sidebar">
+            <ul class="list-unstyled navbar__list">
+              {% block sidebar_nav %}{% endblock %}
+            </ul>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- ===== Page Container ===== -->
+      <div class="page-container">
+
+        <!-- ===== Desktop Header ===== -->
+        <header class="header-desktop">
+          <div class="section__content section__content--p30">
+            <div class="container-fluid">
+              <div class="header-wrap">
+                <button class="sidebar-toggle js-sidebar-toggle" type="button" aria-label="Basculer la navigation" aria-expanded="false" aria-controls="main-sidebar">
+                  <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                </button>
+                <form class="form-header" role="search" onsubmit="return false">
+                  <i class="fa-solid fa-magnifying-glass form-header__icon" aria-hidden="true"></i>
+                  <input class="au-input au-input--xl" type="search" name="search" placeholder="Rechercher…" aria-label="Rechercher">
+                </form>
+                <div class="header-button">
+                  <div class="noti-wrap">
+                    <!-- Notifications -->
+                    <div class="noti__item js-item-menu" role="button" tabindex="0" aria-haspopup="true" aria-label="Notifications">
+                      <i class="fa-solid fa-bell"></i><span class="quantity">3</span>
+                      <div class="notifi-dropdown js-dropdown">
+                        <div class="notifi__title">
+                          <p>Vous avez 3 notifications</p>
+                        </div>
+                        <div class="notifi__item">
+                          <div class="bg-c1 img-cir img-40"><i class="fa-solid fa-bus"></i></div>
+                          <div class="content">
+                            <p>Nouvelle compagnie en attente de validation</p>
+                            <span class="date">Il y a 10 min</span>
+                          </div>
+                        </div>
+                        <div class="notifi__item">
+                          <div class="bg-c2 img-cir img-40"><i class="fa-solid fa-ticket"></i></div>
+                          <div class="content">
+                            <p>Nouvelle réservation confirmée #RES-0842</p>
+                            <span class="date">Il y a 1 heure</span>
+                          </div>
+                        </div>
+                        <div class="notifi__item">
+                          <div class="bg-c3 img-cir img-40"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                          <div class="content">
+                            <p>Trajet Lomé→Kara annulé par NAGODE</p>
+                            <span class="date">Il y a 3 heures</span>
+                          </div>
+                        </div>
+                        <div class="notifi__footer"><a href="#">Toutes les notifications</a></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Account -->
+                  <div class="account-wrap">
+                    <div class="account-item clearfix js-item-menu" role="button" tabindex="0" aria-haspopup="true" aria-label="Menu du compte">
+                      <div class="image"><img src="{% static 'images/icon/avatar-01.jpg' %}" alt="{% block user_name %}Utilisateur{% endblock %}"></div>
+                      <div class="content"><a class="js-acc-btn" href="#">{% block user_display %}Utilisateur{% endblock %}</a></div>
+                      <div class="account-dropdown js-dropdown">
+                        <div class="info clearfix">
+                          <div class="image"><a href="#"><img src="{% static 'images/icon/avatar-01.jpg' %}" alt=""></a></div>
+                          <div class="content">
+                            <h5 class="name"><a href="#">{% block user_dropdown_name %}Utilisateur{% endblock %}</a></h5>
+                            <span class="email">{% block user_email %}utilisateur@example.com{% endblock %}</span>
+                          </div>
+                        </div>
+                        <div class="account-dropdown__body">
+                          <div class="account-dropdown__item"><a href="#"><i class="fa-solid fa-user"></i>Mon profil</a></div>
+                          <div class="account-dropdown__item"><a href="#"><i class="fa-solid fa-gear"></i>Paramètres</a></div>
+                        </div>
+                        <div class="account-dropdown__footer"><a href="{% url 'core:login' %}"><i class="fa-solid fa-power-off"></i>Déconnexion</a></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- ===== Main Content ===== -->
+        <main class="main-content" id="main-content">
+          <div class="section__content section__content--p30">
+            <div class="container-fluid">
+              {% block content %}{% endblock %}
+
+              <!-- Footer -->
+              <div class="row" style="margin-top: 28px;">
+                <div class="col-md-12">
+                  <div class="copyright">
+                    <p>© 2026 MutualTransport — Plateforme de mutualisation du transport interurbain au Togo. Projet tutoré TCC2320.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script src="{% static 'js/vanilla-utils.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap-5.3.8.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/chartjs/chart.umd.js-4.5.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap5-init.js' %}"></script>
+    <script src="{% static 'js/main-vanilla.js' %}"></script>
+    <script src="{% static 'js/modern-plugins.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

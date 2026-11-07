@@ -1,0 +1,19 @@
+{% comment %}
+Sidebar navigation for Administrateur space.
+Include in templates extending base.html via {% block sidebar_nav %}.
+{% endcomment %}
+<li class="{% if active_page == 'admin_dashboard' %}active{% endif %}">
+  <a href="{% url 'core:admin_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a>
+</li>
+<li class="{% if active_page == 'admin_compagnies' %}active{% endif %}">
+  <a href="{% url 'core:admin_compagnies' %}"><i class="fa-solid fa-building"></i>Compagnies</a>
+</li>
+<li class="{% if active_page == 'admin_utilisateurs' %}active{% endif %}">
+  <a href="{% url 'core:admin_utilisateurs' %}"><i class="fa-solid fa-users"></i>Utilisateurs</a>
+</li>
+<li class="{% if active_page == 'admin_reservations' %}active{% endif %}">
+  <a href="{% url 'core:admin_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a>
+</li>
+<li class="{% if active_page == 'admin_collecte' %}active{% endif %}">
+  <a href="{% url 'core:admin_collecte' %}"><i class="fa-solid fa-map-location-dot"></i>Réseau &amp; Collecte</a>
+</li>

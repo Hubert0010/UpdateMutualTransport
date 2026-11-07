@@ -1,0 +1,311 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Tableau de bord — NAGODE Transport | MutualTransport{% endblock %}
+{% block user_name %}Nagode Admin{% endblock %}
+{% block user_display %}NAGODE Transport{% endblock %}
+{% block user_dropdown_name %}Kodjo NAGODE (Gérant){% endblock %}
+{% block user_email %}k.nagode@nagode-transport.tg{% endblock %}
+{% block logo_href %}{% url 'core:compagnie_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="compagnie_dashboard" %}
+{% include "core/includes/sidebar_compagnie.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li class="active"><a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de
+    bord</a></li>
+<li><a href="{% url 'core:compagnie_vehicules' %}"><i class="fa-solid fa-bus"></i>Véhicules</a></li>
+<li><a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a></li>
+<li><a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<!--<li><a href="{% url 'core:compagnie_regles' %}"><i class="fa-solid fa-scale-balanced"></i>Règles d'annulation</a></li>-->
+<li><a href="{% url 'core:compagnie_import' %}"><i class="fa-solid fa-file-import"></i>Import de données</a></li>
+<li><a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building-circle-check"></i>Profil compagnie</a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Tableau de bord — NAGODE Transport</h1>
+    <p class="subtitle">Vue d'ensemble de vos opérations, réservations et revenus du réseau (BF-35).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="date-chip">
+      <i class="fa-regular fa-calendar"></i> Ce mois (Oct. 2026)
+    </button>
+    <a href="{% url 'core:compagnie_trajets' %}" class="m-btn m-btn--primary">
+      <i class="fa-solid fa-plus"></i> Nouveau trajet
+    </a>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Revenus Nets (Octobre)</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-money-bill-wave"></i></span>
+      </div>
+      <p class="stat-card__value">14 820 000 <small style="font-size: 13px; font-weight: 500;">FCFA</small></p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> +16.4% vs mois préc.</p>
+      <div class="stat-card__sparkline"><canvas id="kpi-rev-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Réservations Confirmées</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-ticket"></i></span>
+      </div>
+      <p class="stat-card__value">1 482</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> 98 aujourd'hui</p>
+      <div class="stat-card__sparkline"><canvas id="kpi-res-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Taux de Remplissage</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-users-viewfinder"></i></span>
+      </div>
+      <p class="stat-card__value">89.2%</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> +4.1% vs moyenne réseau</p>
+      <div class="stat-card__sparkline"><canvas id="kpi-occ-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Flotte Active</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-bus"></i></span>
+      </div>
+      <p class="stat-card__value">22 / 24 <small style="font-size: 13px; font-weight: 500;">Bus</small></p>
+      <p class="stat-card__delta text-muted"><i class="fa-solid fa-wrench"></i> 2 bus en révision</p>
+      <div class="stat-card__sparkline"><canvas id="kpi-fleet-chart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Chart: Ventes et réservations des 7 derniers jours -->
+  <div class="col-lg-8 mb-4">
+    <div class="m-card h-100">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Évolution des Ventes &amp; Réservations (Semaine en cours)</h3>
+          <p class="m-card__subtitle">Billets réservés via l'application et les guichets mutualisés</p>
+        </div>
+        <span class="badge bg-primary-subtle text-primary border border-primary">T-Money &amp; Flooz (94%)</span>
+      </div>
+      <div style="height: 280px; position: relative;">
+        <canvas id="compagnieSalesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trajets populaires -->
+  <div class="col-lg-4 mb-4">
+    <div class="m-card h-100">
+      <div class="m-card__header">
+        <div>
+          <h3 class="m-card__title">Lignes les plus rentables</h3>
+          <p class="m-card__subtitle">Part du chiffre d'affaires</p>
+        </div>
+      </div>
+      <div class="list-group list-group-flush">
+        <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-bottom">
+          <div>
+            <strong>Lomé ➔ Kara</strong>
+            <div class="text-muted small">Autocar VIP (65 places) • 10 000 FCFA</div>
+          </div>
+          <span class="badge bg-success">52% CA</span>
+        </div>
+        <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-bottom">
+          <div>
+            <strong>Lomé ➔ Sokodé</strong>
+            <div class="text-muted small">Bus Confort (50 places) • 8 000 FCFA</div>
+          </div>
+          <span class="badge bg-primary">28% CA</span>
+        </div>
+        <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-bottom">
+          <div>
+            <strong>Kara ➔ Dapaong</strong>
+            <div class="text-muted small">Minibus climatisé (25 places) • 4 500 FCFA</div>
+          </div>
+          <span class="badge bg-info">14% CA</span>
+        </div>
+        <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+          <div>
+            <strong>Lomé ➔ Atakpamé</strong>
+            <div class="text-muted small">Navette Express • 4 000 FCFA</div>
+          </div>
+          <span class="badge bg-secondary">6% CA</span>
+        </div>
+      </div>
+      <div class="mt-4 pt-2 border-top text-center">
+        <a href="{% url 'core:compagnie_trajets' %}" class="small text-primary fw-semibold">
+          Gérer tous les trajets et horaires <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Prochains Départs programmés -->
+<div class="m-card mb-4">
+  <div class="m-card__header">
+    <div>
+      <h3 class="m-card__title">Prochains Départs Programmés (Aujourd'hui &amp; Demain)</h3>
+      <p class="m-card__subtitle">Suivi du taux de réservation et embarquement en temps réel</p>
+    </div>
+    <a href="{% url 'core:compagnie_trajets' %}" class="m-btn m-btn--ghost">Voir tout le planning</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Départ / Horaires</th>
+          <th>Ligne</th>
+          <th>Véhicule Assigné</th>
+          <th>Places Réservées</th>
+          <th>Taux</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>Aujourd'hui à 14:30</strong>
+            <div class="text-muted small">Embarquement dans 45 min</div>
+          </td>
+          <td><strong>Lomé (Agbalépédogan) ➔ Kara</strong></td>
+          <td>Bus VIP — TG-8412-BP</td>
+          <td><strong>58</strong> / 60</td>
+          <td><span class="text-success fw-bold">96%</span></td>
+          <td><span class="badge-status badge-status--success">Embarquement ouvert</span></td>
+          <td style="text-align: right;">
+            <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary"
+              title="Scanner les billets QR">
+              <i class="fa-solid fa-qrcode"></i>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Aujourd'hui à 16:00</strong>
+            <div class="text-muted small">Départ régulier</div>
+          </td>
+          <td><strong>Lomé ➔ Sokodé</strong></td>
+          <td>Bus Confort — TG-1190-BN</td>
+          <td><strong>44</strong> / 50</td>
+          <td><span class="text-primary fw-bold">88%</span></td>
+          <td><span class="badge-status badge-status--info">Réservations ouvertes</span></td>
+          <td style="text-align: right;">
+            <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary"
+              title="Voir liste passagers">
+              <i class="fa-solid fa-list-check"></i>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Demain à 06:00</strong>
+            <div class="text-muted small">Premier départ matin</div>
+          </td>
+          <td><strong>Lomé ➔ Dapaong (Direct)</strong></td>
+          <td>Grand Autocar — TG-9042-BW</td>
+          <td><strong>62</strong> / 65</td>
+          <td><span class="text-success fw-bold">95%</span></td>
+          <td><span class="badge-status badge-status--info">Réservations ouvertes</span></td>
+          <td style="text-align: right;">
+            <a href="{% url 'core:compagnie_reservations' %}" class="btn-icon btn-icon--primary"><i
+                class="fa-solid fa-list-check"></i></a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Sparkline KPI helper
+    function makeSparkline(id, data, color) {
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['', '', '', '', '', '', ''],
+          datasets: [{
+            data: data,
+            borderColor: color,
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: { x: { display: false }, y: { display: false } }
+        }
+      });
+    }
+
+    makeSparkline('kpi-rev-chart', [10, 12, 11, 14, 13, 16, 18], '#4272d7');
+    makeSparkline('kpi-res-chart', [80, 95, 90, 110, 105, 120, 128], '#11998e');
+    makeSparkline('kpi-occ-chart', [82, 84, 85, 87, 86, 88, 89], '#f97316');
+    makeSparkline('kpi-fleet-chart', [20, 21, 21, 22, 22, 22, 22], '#ec4899');
+
+    // Main Chart
+    const salesCanvas = document.getElementById('compagnieSalesChart');
+    if (salesCanvas) {
+      new Chart(salesCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+          datasets: [
+            {
+              label: 'Billets vendus',
+              data: [180, 210, 195, 230, 290, 310, 240],
+              backgroundColor: '#4272d7',
+              borderRadius: 6
+            },
+            {
+              label: 'Revenus (x 10 000 FCFA)',
+              data: [160, 190, 175, 210, 260, 280, 215],
+              backgroundColor: '#11998e',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', align: 'end' }
+          },
+          scales: {
+            y: { grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

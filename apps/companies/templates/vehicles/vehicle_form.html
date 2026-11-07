@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+{% block title %}{{ page_title }} — MutualTransport{% endblock %}
+{% block user_name %}{{ request.user.get_full_name|default:request.user.username }}{% endblock %}
+{% block user_display %}{{ request.user.get_full_name|default:request.user.username }}{% endblock %}
+{% block user_dropdown_name %}{{ request.user.get_full_name|default:request.user.username }}{% endblock %}
+{% block user_email %}{{ request.user.email }}{% endblock %}
+{% block sidebar_nav %}{% with active_page="compagnie_vehicules" %}{% include "core/includes/sidebar_compagnie.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>{{ page_title }}</h1><p class="subtitle">Renseignez les informations administratives et techniques du véhicule.</p></div><div class="page-header__actions"><a href="{% url 'vehicles:list' %}" class="m-btn m-btn--ghost"><i class="fa-solid fa-arrow-left"></i> Retour à la flotte</a></div></div>
+<div class="m-card">
+  <form method="post" novalidate>{% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-3">
+      {% for field in form %}
+      <div class="{% if field.name == 'notes' %}col-12{% elif field.name == 'has_ac' or field.name == 'has_wifi' or field.name == 'has_usb' %}col-md-4{% else %}col-md-6{% endif %}">
+        {% if field.field.widget.input_type == "checkbox" %}
+          <div class="form-check mt-4">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+        {% else %}
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}</label>
+          {{ field }}
+        {% endif %}
+        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="d-flex justify-content-end gap-2 mt-4"><a href="{% url 'vehicles:list' %}" class="btn btn-light">Annuler</a><button class="m-btn m-btn--primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button></div>
+  </form>
+</div>
+{% endblock %}

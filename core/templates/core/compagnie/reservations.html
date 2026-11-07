@@ -1,0 +1,316 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Réservations &amp; Embarquement — NAGODE Transport | MutualTransport{% endblock %}
+{% block user_name %}Nagode Admin{% endblock %}
+{% block user_display %}NAGODE Transport{% endblock %}
+{% block user_dropdown_name %}Kodjo NAGODE (Gérant){% endblock %}
+{% block user_email %}k.nagode@nagode-transport.tg{% endblock %}
+{% block logo_href %}{% url 'core:compagnie_dashboard' %}{% endblock %}
+
+{% block sidebar_nav %}
+{% with active_page="compagnie_reservations" %}
+{% include "core/includes/sidebar_compagnie.html" %}
+{% endwith %}
+{% endblock %}
+
+{% block mobile_nav %}
+<li><a href="{% url 'core:compagnie_dashboard' %}"><i class="fa-solid fa-gauge-high"></i>Tableau de bord</a></li>
+<li><a href="{% url 'core:compagnie_vehicules' %}"><i class="fa-solid fa-bus"></i>Véhicules</a></li>
+<li><a href="{% url 'core:compagnie_trajets' %}"><i class="fa-solid fa-route"></i>Trajets</a></li>
+<li class="active"><a href="{% url 'core:compagnie_reservations' %}"><i class="fa-solid fa-ticket"></i>Réservations</a></li>
+<li><a href="{% url 'core:compagnie_regles' %}"><i class="fa-solid fa-scale-balanced"></i>Règles d'annulation</a></li>
+<li><a href="{% url 'core:compagnie_import' %}"><i class="fa-solid fa-file-import"></i>Import de données</a></li>
+<li><a href="{% url 'core:compagnie_profil' %}"><i class="fa-solid fa-building-circle-check"></i>Profil compagnie</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Réservations &amp; Contrôle d'Embarquement</h1>
+    <p class="subtitle">Gestion des passagers enregistrés, vérification des billets et validation QR au départ (BF-34).</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="m-btn m-btn--ghost" onclick="location.reload();">
+      <i class="fa-solid fa-arrows-rotate"></i> Actualiser
+    </button>
+    <button type="button" class="m-btn m-btn--primary" data-bs-toggle="modal" data-bs-target="#modalScanQr">
+      <i class="fa-solid fa-camera"></i> Scanner QR Billet
+    </button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="row row-tight mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Réservations Aujourd'hui</span>
+        <span class="stat-card__icon stat-card__icon--c1"><i class="fa-solid fa-ticket"></i></span>
+      </div>
+      <p class="stat-card__value">148</p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-arrow-up"></i> +12% vs hier</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Passagers Embarqués</span>
+        <span class="stat-card__icon stat-card__icon--c2"><i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i></span>
+      </div>
+      <p class="stat-card__value">112</p>
+      <p class="stat-card__delta text-success"><i class="fa-solid fa-circle-check"></i> 76% du contingent</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">En Attente d'Arrivée</span>
+        <span class="stat-card__icon stat-card__icon--c3"><i class="fa-solid fa-clock"></i></span>
+      </div>
+      <p class="stat-card__value">36</p>
+      <p class="stat-card__delta text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Départs imminents</p>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-card__head">
+        <span class="stat-card__label">Recettes Journalières</span>
+        <span class="stat-card__icon stat-card__icon--c4"><i class="fa-solid fa-coins"></i></span>
+      </div>
+      <p class="stat-card__value">1 480 000 <small style="font-size: 13px; font-weight: 500;">FCFA</small></p>
+      <p class="stat-card__delta stat-card__delta--up"><i class="fa-solid fa-shield-halved"></i> Fonds garantis</p>
+    </div>
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="m-card">
+  <div class="filter-bar">
+    <div class="tab-nav" role="tablist">
+      <button class="active" onclick="filterRes('all', this)">Tous (148)</button>
+      <button onclick="filterRes('confirme', this)">Confirmés (36)</button>
+      <button onclick="filterRes('embarque', this)">Embarqués (112)</button>
+      <button onclick="filterRes('annule', this)">Annulés (2)</button>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="passengerSearchInput" placeholder="Nom, téléphone, n° billet..." onkeyup="searchPassenger()">
+      </div>
+      <select class="form-select form-select-sm" style="width: auto; height: 36px; border-color: var(--m-border);" onchange="filterTripLine(this.value)">
+        <option value="">Tous départs</option>
+        <option value="Lomé-Kara">Lomé ➔ Kara (06:30)</option>
+        <option value="Lomé-Sokodé">Lomé ➔ Sokodé (08:00)</option>
+        <option value="Lomé-Dapaong">Lomé ➔ Dapaong (05:30)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="m-table table-hover align-middle" id="passengersTable">
+      <thead>
+        <tr>
+          <th>Billet &amp; Siège</th>
+          <th>Passager &amp; Contact</th>
+          <th>Trajet Assigné</th>
+          <th>Paiement</th>
+          <th>Statut</th>
+          <th style="text-align: right;">Action d'Embarquement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="res-row status-confirme" data-trip="Lomé-Kara">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary px-2 py-1">Siège 14</span>
+              <strong>#RES-2026-9041</strong>
+            </div>
+            <div class="text-muted small">Réservé via App mobile</div>
+          </td>
+          <td>
+            <strong>Kossi Mawuli DOSSEH</strong>
+            <div class="text-muted small">+228 90 41 88 22</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Kara</strong>
+            <div class="text-muted small">Aujourd'hui 14:30 • Bus TG-8412-BP</div>
+          </td>
+          <td>
+            <span class="badge bg-success-subtle text-success border border-success">Payé T-Money</span>
+            <div class="text-muted small">10 000 FCFA</div>
+          </td>
+          <td><span class="badge-status badge-status--warning">En attente d'embarquement</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="m-btn m-btn--primary" style="height: 30px; font-size: 12px; padding: 0 10px;" onclick="validateBoarding('Kossi Mawuli DOSSEH', '14')">
+                <i class="fa-solid fa-check"></i> Valider embarquement
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="res-row status-embarque" data-trip="Lomé-Kara">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success px-2 py-1">Siège 08</span>
+              <strong>#RES-2026-9035</strong>
+            </div>
+            <div class="text-muted small">Validé par QR scanner</div>
+          </td>
+          <td>
+            <strong>Akossiwa GBADOE</strong>
+            <div class="text-muted small">+228 91 22 33 44</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Kara</strong>
+            <div class="text-muted small">Aujourd'hui 14:30 • Bus TG-8412-BP</div>
+          </td>
+          <td>
+            <span class="badge bg-info-subtle text-info border border-info">Payé Flooz</span>
+            <div class="text-muted small">10 000 FCFA</div>
+          </td>
+          <td><span class="badge-status badge-status--success">Embarqué à bord</span></td>
+          <td style="text-align: right;">
+            <span class="text-muted small"><i class="fa-solid fa-circle-check text-success"></i> Contrôlé à 14:10</span>
+          </td>
+        </tr>
+
+        <tr class="res-row status-confirme" data-trip="Lomé-Sokodé">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary px-2 py-1">Siège 22</span>
+              <strong>#RES-2026-9038</strong>
+            </div>
+            <div class="text-muted small">Paiement guichet gare</div>
+          </td>
+          <td>
+            <strong>Komlanvi ADANLETE</strong>
+            <div class="text-muted small">+228 98 76 54 32</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Sokodé</strong>
+            <div class="text-muted small">Aujourd'hui 16:00 • Bus TG-1190-BN</div>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border">Espèces guichet</span>
+            <div class="text-muted small">8 000 FCFA</div>
+          </td>
+          <td><span class="badge-status badge-status--warning">En attente d'embarquement</span></td>
+          <td style="text-align: right;">
+            <div class="table-actions justify-content-end">
+              <button class="m-btn m-btn--primary" style="height: 30px; font-size: 12px; padding: 0 10px;" onclick="validateBoarding('Komlanvi ADANLETE', '22')">
+                <i class="fa-solid fa-check"></i> Valider embarquement
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="res-row status-annule" data-trip="Lomé-Dapaong">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary px-2 py-1">Siège 05</span>
+              <strong>#RES-2026-9012</strong>
+            </div>
+            <div class="text-muted small">Annulé 24h avant départ</div>
+          </td>
+          <td>
+            <strong>Fousseni OUATTARA</strong>
+            <div class="text-muted small">+228 92 11 00 99</div>
+          </td>
+          <td>
+            <strong>Lomé ➔ Dapaong</strong>
+            <div class="text-muted small">Départ 23/10 05:30</div>
+          </td>
+          <td>
+            <span class="badge bg-danger-subtle text-danger border border-danger">Remboursé 85%</span>
+            <div class="text-muted small">11 900 FCFA restitués</div>
+          </td>
+          <td><span class="badge-status badge-status--danger">Annulé par client</span></td>
+          <td style="text-align: right;">
+            <span class="text-muted small">Siège remis en vente</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Scanner QR Code (BF-34) -->
+<div class="modal fade" id="modalScanQr" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: var(--m-radius);">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Scanner QR Code d'embarquement</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="p-4 bg-dark text-white rounded mb-3 position-relative" style="height: 220px; display: flex; align-items: center; justify-content: center;">
+          <div style="border: 2px dashed #4272d7; width: 160px; height: 160px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-qrcode" style="font-size: 70px; opacity: 0.7;"></i>
+          </div>
+          <div style="position: absolute; bottom: 10px; font-size: 12px; color: #94a3b8;">
+            Placez le QR code du billet devant la caméra
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Ou saisissez manuellement la référence billet :</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="manualTicketRef" placeholder="ex: RES-2026-9041">
+            <button class="m-btn m-btn--primary" type="button" onclick="validateManualTicket()">Vérifier</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterRes(status, btn) {
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('.res-row');
+  rows.forEach(r => {
+    if (status === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains('status-' + status) ? '' : 'none';
+    }
+  });
+}
+
+function searchPassenger() {
+  const query = document.getElementById('passengerSearchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.res-row');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function filterTripLine(line) {
+  const rows = document.querySelectorAll('.res-row');
+  rows.forEach(r => {
+    if (!line || r.getAttribute('data-trip') === line) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+
+function validateBoarding(name, seat) {
+  if (confirm("Confirmer l'embarquement à bord de " + name + " (Siège " + seat + ") ?")) {
+    alert("Passager " + name + " validé avec succès ! Statut mis à jour sur le tableau de bord conducteur.");
+    location.reload();
+  }
+}
+
+function validateManualTicket() {
+  const ref = document.getElementById('manualTicketRef').value.trim();
+  if (ref) {
+    alert("Billet " + ref + " valide et payé ! Embarquement autorisé.");
+  }
+}
+</script>
+{% endblock %}
